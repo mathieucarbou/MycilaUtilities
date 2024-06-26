@@ -1,0 +1,35 @@
+{
+  "name": "MycilaUtilities",
+  "version": "1.0.0",
+  "description": "Utils stuff for Arduino / ESP32 like Time, String functions, CircularBuffer, etc",
+  "homepage": "https://github.com/mathieucarbou/MycilaUtilities",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mathieucarbou/MycilaUtilities.git"
+  },
+  "authors": {
+    "name": "Mathieu Carbou",
+    "url": "https://github.com/mathieucarbou"
+  },
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": [
+    "espressif32"
+  ],
+  "headers": [
+    "MycilaCircularBuffer.h",
+    "MycilaString.h",
+    "MycilaTime.h"
+  ],
+  "export": {
+    "include": [
+      "examples",
+      "src",
+      "library.json",
+      "library.properties",
+      "LICENSE",
+      "platformio.ini",
+      "README.md"
+    ]
+  }
+}
