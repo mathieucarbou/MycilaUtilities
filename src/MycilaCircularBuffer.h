@@ -24,9 +24,10 @@ namespace Mycila {
       T sum() const { return _sum; }
       T max() const { return _max; }
       T min() const { return _min; }
+      T diff() const { return last() - first(); }
       T rate() const {
-        T diff = last() - first();
-        return diff == 0 ? 0 : _count / diff;
+        T d = diff();
+        return d == 0 ? 0 : _count / d;
       }
 
       T add(T value) {
