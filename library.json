@@ -1,6 +1,6 @@
 {
   "name": "MycilaUtilities",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Utils stuff for Arduino / ESP32 like Time, String functions, CircularBuffer, etc",
   "homepage": "https://github.com/mathieucarbou/MycilaUtilities",
   "repository": {
