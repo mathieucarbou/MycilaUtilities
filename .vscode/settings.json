@@ -10,6 +10,7 @@
   "files.associations": {
     "*.cps": "javascript",
     "*.config": "cpp",
-    "functional": "cpp"
+    "functional": "cpp",
+    "algorithm": "cpp"
   }
 }

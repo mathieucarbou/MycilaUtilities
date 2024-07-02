@@ -3,8 +3,10 @@
 #include <MycilaCircularBuffer.h>
 #include <MycilaString.h>
 #include <MycilaTime.h>
+#include <MycilaPID.h>
 
 Mycila::CircularBuffer<int, 5> buffer;
+Mycila::PID pid;
 
 void setup() {
   Serial.begin(115200);

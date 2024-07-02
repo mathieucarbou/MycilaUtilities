@@ -19,7 +19,8 @@
   "headers": [
     "MycilaCircularBuffer.h",
     "MycilaString.h",
-    "MycilaTime.h"
+    "MycilaTime.h",
+    "MycilaPID.h"
   ],
   "export": {
     "include": [
