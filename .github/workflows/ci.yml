@@ -126,4 +126,7 @@ jobs:
       - run: platformio platform install ${{ matrix.platform }}
         
       - name: Build Example1
-        run: platformio ci "examples/Example1/Example1.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}
+        run: |
+          PLATFORMIO_BUILD_FLAGS="-std=c++17 -std=gnu++17" \
+          PLATFORMIO_BUILD_UNFLAGS="-std=gnu++11" \
+          platformio ci "examples/Example1/Example1.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}

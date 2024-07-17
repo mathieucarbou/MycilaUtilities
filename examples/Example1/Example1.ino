@@ -1,9 +1,10 @@
 #include <Arduino.h>
 
 #include <MycilaCircularBuffer.h>
+#include <MycilaExpiringValue.h>
+#include <MycilaPID.h>
 #include <MycilaString.h>
 #include <MycilaTime.h>
-#include <MycilaPID.h>
 
 Mycila::CircularBuffer<int, 5> buffer;
 Mycila::PID pid;
@@ -28,6 +29,24 @@ void setup() {
   Serial.println(Mycila::Time::toDHHMMSS(180245));
   Serial.println(Mycila::Time::toMinutes("12:34"));
   Serial.println(Mycila::Time::getUnixTime());
+
+  Serial.println("Mycila::ExpiringValue");
+  int i = 7;
+  const int j = 8;
+  Mycila::ExpiringValue<int> value(1000);
+  value.update(10);
+  Serial.println((bool)value);
+  Serial.println(value.get());
+  Serial.println(value.isPresent());
+  Serial.println(value.orElse(0));
+  Serial.println(value.orElse(i));
+  Serial.println(value.orElse(j));
+  delay(1200);
+  Serial.println((bool)value);
+  Serial.println(value.isPresent());
+  Serial.println(value.orElse(20));
+  Serial.println(value.orElse(i));
+  Serial.println(value.orElse(j));
 }
 
 // Destroy default Arduino async task
