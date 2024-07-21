@@ -4,6 +4,10 @@
  */
 #pragma once
 
+#ifdef MYCILA_JSON_SUPPORT
+#include <ArduinoJson.h>
+#endif
+
 #include <optional>
 #include <stdexcept>
 #include <utility>
@@ -64,6 +68,16 @@ namespace Mycila {
       }
 
       explicit operator bool() const noexcept { return isPresent(); }
+
+#ifdef MYCILA_JSON_SUPPORT
+      void toJson(const JsonObject& root) const {
+        if (isPresent()) {
+          root["expired"] = isExpired();
+          root["time"] = _time;
+          root["value"] = _val;
+        }
+      }
+#endif
 
     private:
       uint32_t _time;
