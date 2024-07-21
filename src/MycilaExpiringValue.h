@@ -67,6 +67,9 @@ namespace Mycila {
         return _val;
       }
 
+      // reset as if it ws never updated
+      void reset() { _time = 0; }
+
       explicit operator bool() const noexcept { return isPresent(); }
 
 #ifdef MYCILA_JSON_SUPPORT
