@@ -94,7 +94,7 @@ namespace Mycila {
       float compute(float input) {
         const float dInput = _reverse ? _input - input : input - _input;
         const float error = _reverse ? input - _setPoint : _setPoint - input;
-        const float dError = error - this->_error;
+        const float dError = error - _error;
 
         float peTerm = _kp * error;
         float pmTerm = _kp * dInput;
