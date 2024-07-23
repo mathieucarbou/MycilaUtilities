@@ -11,6 +11,7 @@
     "*.cps": "javascript",
     "*.config": "cpp",
     "functional": "cpp",
-    "algorithm": "cpp"
+    "algorithm": "cpp",
+    "limits": "cpp"
   }
 }

@@ -13,7 +13,14 @@ namespace Mycila {
   template <typename T, size_t N>
   class CircularBuffer {
     public:
-      CircularBuffer() { reset(); }
+      CircularBuffer() {
+        _buffer = new T[N];
+        reset();
+      }
+
+      ~CircularBuffer() {
+        delete[] _buffer;
+      }
 
       T const& operator[](size_t index) const { return _buffer[(_index + index) % N]; }
 
@@ -58,8 +65,6 @@ namespace Mycila {
         _max = std::numeric_limits<T>::min();
         _index = 0;
         _count = 0;
-        for (int i = 0; i < N; i++)
-          _buffer[i] = 0;
       }
 
       void dump(Print& printer) { // NOLINT (runtime/references)
@@ -79,12 +84,12 @@ namespace Mycila {
       }
 
     private:
-      T _buffer[N];
+      T* _buffer;
       T _sum;
       T _min;
       T _max;
-      size_t _index = 0;
-      size_t _count = 0;
+      size_t _index;
+      size_t _count;
   };
 
 } // namespace Mycila
