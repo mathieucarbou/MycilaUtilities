@@ -11,9 +11,16 @@
 
 namespace Mycila {
   template <typename T, size_t N>
-  class CircularBuffer {
+  class CircularBufferHeap {
     public:
-      CircularBuffer() { reset(); }
+      CircularBufferHeap() {
+        _buffer = new T[N];
+        reset();
+      }
+
+      ~CircularBufferHeap() {
+        delete[] _buffer;
+      }
 
       T const& operator[](size_t index) const { return _buffer[(_index + index) % N]; }
 
@@ -79,7 +86,7 @@ namespace Mycila {
       }
 
     private:
-      T _buffer[N];
+      T* _buffer;
       T _sum;
       T _min;
       T _max;
