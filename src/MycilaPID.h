@@ -16,31 +16,31 @@ namespace Mycila {
   // - https://github.com/br3ttb/Arduino-PID-Library
   class PID {
     public:
-      typedef enum {
+      enum class ProportionalMode {
         // proportional term computed from the error
         P_ON_ERROR = 1,
         // proportional term computed from the input
         P_ON_INPUT = 2,
         // proportional term computed from the error and input 50% each
         P_ON_BOTH = 3,
-      } ProportionalMode;
+      };
 
-      typedef enum {
+      enum class DerivativeMode {
         // derivative term computed from the error
         D_ON_ERROR = 1,
         // derivative term computed from the input
         D_ON_INPUT = 2,
-      } DerivativeMode;
+      };
 
       //  integral anti-windup
-      typedef enum {
+      enum class IntegralCorrectionMode {
         // off
         IC_OFF = 0,
         // clamp the integral term between the limits
         IC_CLAMP = 1,
         // provide some integral correction, prevents deep saturation and reduces overshoot
         IC_ADVANCED = 2,
-      } IntegralCorrectionMode;
+      };
 
     public:
       void setProportionalMode(ProportionalMode mode) { _pMode = mode; }
@@ -188,9 +188,9 @@ namespace Mycila {
 
 #ifdef MYCILA_JSON_SUPPORT
       void toJson(const JsonObject& root) const {
-        root["pMode"] = _pMode;
-        root["dMode"] = _dMode;
-        root["icMode"] = _icMode;
+        root["pMode"] = static_cast<int>(_pMode);
+        root["dMode"] = static_cast<int>(_dMode);
+        root["icMode"] = static_cast<int>(_icMode);
         root["reverse"] = _reverse;
         root["setpoint"] = _setPoint;
         root["kp"] = _kp;
