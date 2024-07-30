@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <Print.h>
 #include <stddef.h>
 
 #include <functional>
