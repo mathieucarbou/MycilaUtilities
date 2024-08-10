@@ -18,9 +18,11 @@
   ],
   "headers": [
     "MycilaCircularBuffer.h",
+    "MycilaExpiringValue.h",
+    "MycilaPID.h",
     "MycilaString.h",
     "MycilaTime.h",
-    "MycilaPID.h"
+    "MycilaUtilities.h"
   ],
   "export": {
     "include": [
