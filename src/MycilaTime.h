@@ -41,26 +41,34 @@ namespace Mycila {
 
       static String getLocalStr() { return toLocalStr(getUnixTime()); }
 
-      static int toMinutes(const String& time, char sep = ':') {
-        int i = time.indexOf(sep);
+      static uint32_t toMinutes(const char* time, char sep = ':') {
+        if (!time || strlen(time) == 0)
+          return 0;
+        int i = -1;
+        for (int j = 0; time[j] != '\0'; j++) {
+          if (time[j] == sep) {
+            i = j;
+            break;
+          }
+        }
         if (i < 0)
-          return i;
-        return time.substring(0, i).toInt() * 60 + time.substring(i + 1).toInt();
+          return atol(time);
+        char* hours = reinterpret_cast<char*>(malloc(i + 1));
+        memcpy(hours, time, i);
+        hours[i] = '\0';
+        uint32_t l = atol(hours) * 60 + atol(time + i + 1);
+        free(hours);
+        return l;
       }
 
-      static int timeInRange(const struct tm& timeInfo, const String& start, const String& end, char sep = ':') {
-        const int startMinutes = toMinutes(start, sep);
-        if (startMinutes == -1)
-          return -1;
-
-        const int stopMinutes = toMinutes(end, sep);
-        if (stopMinutes == -1)
-          return -1;
+      static uint32_t timeInRange(const struct tm& timeInfo, const char* start, const char* end, char sep = ':') {
+        const uint32_t startMinutes = toMinutes(start, sep);
+        const uint32_t stopMinutes = toMinutes(end, sep);
 
         if (startMinutes == stopMinutes)
           return false; // range is empty
 
-        const uint16_t timeMinutes = timeInfo.tm_hour * 60 + timeInfo.tm_min;
+        const uint32_t timeMinutes = timeInfo.tm_hour * 60 + timeInfo.tm_min;
 
         // cases:
         // startMinutes < stopMinutes : i.e. 06:00 -> 22:00

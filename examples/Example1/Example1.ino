@@ -27,8 +27,19 @@ void setup() {
 
   Serial.println(Mycila::Str::lowerCaseCopy("Hello World"));
   Serial.println(Mycila::Time::toDHHMMSS(180245));
-  Serial.println(Mycila::Time::toMinutes("12:34"));
+  Serial.println(Mycila::Time::toMinutes("12:34")); // 754
+  Serial.println(Mycila::Time::toMinutes("34"));    // 34
+  Serial.println(Mycila::Time::toMinutes(":34"));   // 34
+  Serial.println(Mycila::Time::toMinutes("34:"));   // 2040
+  Serial.println(Mycila::Time::toMinutes(":"));     // 0
+  Serial.println(Mycila::Time::toMinutes(""));      // 0
   Serial.println(Mycila::Time::getUnixTime());
+
+  struct tm timeInfo;
+  timeInfo.tm_hour = 12;
+  timeInfo.tm_min = 34;
+  Serial.println(Mycila::Time::timeInRange(timeInfo, "12:00", "13:00"));
+  Serial.println(Mycila::Time::timeInRange(timeInfo, "13:00", "12:00"));
 
   Serial.println("Mycila::ExpiringValue");
   int i = 7;
