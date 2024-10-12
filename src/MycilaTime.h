@@ -7,6 +7,8 @@
 #include <WString.h>
 #include <time.h>
 
+#include <cstdio>
+
 namespace Mycila {
   class Time {
     public:
@@ -78,11 +80,11 @@ namespace Mycila {
 
       static const String toDHHMMSS(uint32_t seconds) {
         const uint8_t days = seconds / 86400;
-        seconds = seconds % (uint32_t)86400;
+        seconds = seconds % static_cast<uint32_t>(86400);
         const uint8_t hh = seconds / 3600;
-        seconds = seconds % (uint32_t)3600;
+        seconds = seconds % static_cast<uint32_t>(3600);
         const uint8_t mm = seconds / 60;
-        const uint8_t ss = seconds % (uint32_t)60;
+        const uint8_t ss = seconds % static_cast<uint32_t>(60);
         char buffer[14];
         snprintf(buffer, sizeof(buffer), "%" PRIu8 "d %02" PRIu8 ":%02" PRIu8 ":%02" PRIu8, days % 1000, hh % 100, mm % 100, ss % 100);
         return buffer;
