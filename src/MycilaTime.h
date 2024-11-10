@@ -5,6 +5,7 @@
 #pragma once
 
 #include <WString.h>
+#include <inttypes.h>
 #include <time.h>
 
 #include <cstdio>
