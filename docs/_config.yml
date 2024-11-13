@@ -1,7 +1,7 @@
 # bundle exec jekyll serve --host=0.0.0.0
 
 title: MycilaUtilities
-description: Utils stuff for Arduino / ESP32 like Time, String functions, CircularBuffer, etc
+description: Utils stuff for Arduino / ESP32 like PID, Time, CircularBuffer, etc
 remote_theme: pages-themes/cayman@v0.2.0
 plugins:
   - jekyll-remote-theme

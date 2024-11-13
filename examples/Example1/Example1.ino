@@ -3,8 +3,9 @@
 #include <MycilaCircularBuffer.h>
 #include <MycilaExpiringValue.h>
 #include <MycilaPID.h>
-#include <MycilaString.h>
 #include <MycilaTime.h>
+
+#include <string>
 
 Mycila::CircularBuffer<int, 5> buffer;
 Mycila::PID pid;
@@ -25,8 +26,7 @@ void setup() {
   buffer.dump(Serial);
   Serial.println();
 
-  Serial.println(Mycila::Str::lowerCaseCopy("Hello World"));
-  Serial.println(Mycila::Time::toDHHMMSS(180245));
+  Serial.println(Mycila::Time::toDHHMMSS(180245).c_str());
   Serial.println(Mycila::Time::toMinutes("12:34")); // 754
   Serial.println(Mycila::Time::toMinutes("34"));    // 34
   Serial.println(Mycila::Time::toMinutes(":34"));   // 34

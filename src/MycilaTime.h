@@ -4,26 +4,26 @@
  */
 #pragma once
 
-#include <WString.h>
 #include <inttypes.h>
 #include <time.h>
 
 #include <cstdio>
+#include <string>
 
 namespace Mycila {
   class Time {
     public:
-      static String toISO8601Str(time_t unixTime) {
+      static std::string toISO8601Str(time_t unixTime) {
         if (unixTime == 0)
-          return emptyString;
+          return std::string();
         char buffer[21];
         strftime(buffer, sizeof(buffer), "%FT%TZ", gmtime(&unixTime));
         return buffer;
       }
 
-      static String toLocalStr(time_t unixTime) {
+      static std::string toLocalStr(time_t unixTime) {
         if (unixTime == 0)
-          return emptyString;
+          return std::string();
         struct tm timeInfo;
         localtime_r(&unixTime, &timeInfo);
         char buffer[20];
@@ -40,12 +40,12 @@ namespace Mycila {
         return now;
       }
 
-      static String getISO8601Str() { return toISO8601Str(getUnixTime()); }
+      static std::string getISO8601Str() { return toISO8601Str(getUnixTime()); }
 
-      static String getLocalStr() { return toLocalStr(getUnixTime()); }
+      static std::string getLocalStr() { return toLocalStr(getUnixTime()); }
 
       static uint32_t toMinutes(const char* time, char sep = ':') {
-        if (!time || strlen(time) == 0)
+        if (!time || !time[0])
           return 0;
         int i = -1;
         for (int j = 0; time[j] != '\0'; j++) {
@@ -79,7 +79,7 @@ namespace Mycila {
         return (startMinutes < stopMinutes && timeMinutes >= startMinutes && timeMinutes < stopMinutes) || (startMinutes > stopMinutes && (timeMinutes >= startMinutes || timeMinutes < stopMinutes));
       }
 
-      static const String toDHHMMSS(uint32_t seconds) {
+      static const std::string toDHHMMSS(uint32_t seconds) {
         const uint8_t days = seconds / 86400;
         seconds = seconds % static_cast<uint32_t>(86400);
         const uint8_t hh = seconds / 3600;

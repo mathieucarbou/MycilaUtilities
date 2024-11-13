@@ -10,4 +10,4 @@
 [![GitHub latest commit](https://badgen.net/github/last-commit/mathieucarbou/MycilaUtilities)](https://GitHub.com/mathieucarbou/MycilaUtilities/commit/)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/mathieucarbou/MycilaUtilities)
 
-Utils stuff for Arduino / ESP32 like Time, String functions, CircularBuffer, etc
+Utils stuff for Arduino / ESP32 like PID, Time, CircularBuffer, etc

@@ -1,7 +1,7 @@
 {
   "name": "MycilaUtilities",
   "version": "2.0.0",
-  "description": "Utils stuff for Arduino / ESP32 like Time, String functions, CircularBuffer, etc",
+  "description": "Utils stuff for Arduino / ESP32 like PID, Time, CircularBuffer, etc",
   "homepage": "https://github.com/mathieucarbou/MycilaUtilities",
   "repository": {
     "type": "git",
@@ -20,7 +20,6 @@
     "MycilaCircularBuffer.h",
     "MycilaExpiringValue.h",
     "MycilaPID.h",
-    "MycilaString.h",
     "MycilaTime.h",
     "MycilaUtilities.h"
   ],

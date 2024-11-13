@@ -12,5 +12,4 @@
 #include "MycilaCircularBuffer.h"
 #include "MycilaExpiringValue.h"
 #include "MycilaPID.h"
-#include "MycilaString.h"
 #include "MycilaTime.h"
