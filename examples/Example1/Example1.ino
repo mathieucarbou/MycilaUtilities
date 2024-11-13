@@ -3,6 +3,7 @@
 #include <MycilaCircularBuffer.h>
 #include <MycilaExpiringValue.h>
 #include <MycilaPID.h>
+#include <MycilaString.h>
 #include <MycilaTime.h>
 
 #include <string>
@@ -26,6 +27,11 @@ void setup() {
   buffer.dump(Serial);
   Serial.println();
 
+  Serial.println(Mycila::string::toLowerCase("Hello World").c_str());
+  Serial.println(Mycila::string::toUpperCase("Hello World").c_str());
+  Serial.println(Mycila::string::trim("  Hello World  ").c_str());
+  Serial.println(Mycila::string::startsWith("Hello World", "Hello"));
+  Serial.println(Mycila::string::endsWith("Hello World", "World"));
   Serial.println(Mycila::Time::toDHHMMSS(180245).c_str());
   Serial.println(Mycila::Time::toMinutes("12:34")); // 754
   Serial.println(Mycila::Time::toMinutes("34"));    // 34

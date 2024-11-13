@@ -20,6 +20,7 @@
     "MycilaCircularBuffer.h",
     "MycilaExpiringValue.h",
     "MycilaPID.h",
+    "MycilaString.h",
     "MycilaTime.h",
     "MycilaUtilities.h"
   ],
