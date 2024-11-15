@@ -33,9 +33,8 @@ namespace Mycila {
         return trim(s);
       }
 
-      static inline bool endsWith(const std::string& str, const char* suffix) {
-        const size_t len = strlen(suffix);
-        return str.length() >= len && strcmp(str.c_str() + str.length() - len, suffix) == 0;
+      static inline bool endsWith(const std::string& str, const std::string_view suffix) {
+        return str.length() >= suffix.length() && str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0;
       }
 
       static inline bool startsWith(const std::string& str, const char* suffix) {

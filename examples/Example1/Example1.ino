@@ -32,6 +32,7 @@ void setup() {
   Serial.println(Mycila::string::trim("  Hello World  ").c_str());
   Serial.println(Mycila::string::startsWith("Hello World", "Hello"));
   Serial.println(Mycila::string::endsWith("Hello World", "World"));
+  Serial.println(Mycila::string::endsWith("Hello World", ""));
   Serial.println(Mycila::Time::toDHHMMSS(180245).c_str());
   Serial.println(Mycila::Time::toMinutes("12:34")); // 754
   Serial.println(Mycila::Time::toMinutes("34"));    // 34
