@@ -5,7 +5,8 @@
 #pragma once
 
 #include <inttypes.h>
-#include <time.h>
+#include <string.h>
+#include <sys/time.h>
 
 #include <cstdio>
 #include <string>

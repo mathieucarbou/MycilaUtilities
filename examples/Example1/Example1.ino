@@ -1,12 +1,10 @@
-#include <Arduino.h>
+#include <HardwareSerial.h>
 
 #include <MycilaCircularBuffer.h>
 #include <MycilaExpiringValue.h>
 #include <MycilaPID.h>
 #include <MycilaString.h>
 #include <MycilaTime.h>
-
-#include <string>
 
 Mycila::CircularBuffer<int, 5> buffer;
 Mycila::PID pid;
