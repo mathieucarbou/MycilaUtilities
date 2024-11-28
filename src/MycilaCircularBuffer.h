@@ -11,7 +11,7 @@
 #include <limits>
 
 namespace Mycila {
-  template <typename T, size_t N>
+  template <typename T, size_t N, std::enable_if_t<std::is_integral_v<T> || std::is_floating_point_v<T>, bool> = true>
   class CircularBuffer {
     public:
       CircularBuffer() { reset(); }
