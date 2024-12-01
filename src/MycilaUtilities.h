@@ -4,10 +4,10 @@
  */
 #pragma once
 
-#define MYCILA_UTILITIES_VERSION "3.1.2"
+#define MYCILA_UTILITIES_VERSION "3.1.3"
 #define MYCILA_UTILITIES_VERSION_MAJOR 3
 #define MYCILA_UTILITIES_VERSION_MINOR 1
-#define MYCILA_UTILITIES_VERSION_REVISION 2
+#define MYCILA_UTILITIES_VERSION_REVISION 3
 
 #include "MycilaCircularBuffer.h"
 #include "MycilaExpiringValue.h"
