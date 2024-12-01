@@ -5,7 +5,7 @@
 #pragma once
 
 #ifdef MYCILA_JSON_SUPPORT
-#include <ArduinoJson.h>
+  #include <ArduinoJson.h>
 #endif
 
 #include <optional>
@@ -31,6 +31,18 @@ namespace Mycila {
         return std::nullopt;
       }
 
+      std::optional<T> update(T&& newVale) {
+        if (_time) {
+          T old = std::forward<T>(_val);
+          _val = std::forward<T>(newVale);
+          _time = millis();
+          return old;
+        }
+        _val = std::forward<T>(newVale);
+        _time = millis();
+        return std::nullopt;
+      }
+
       void setExpiration(uint32_t millis) { _expiration = millis; }
       uint32_t getExpiration() const { return _expiration; }
 
@@ -40,14 +52,15 @@ namespace Mycila {
       uint32_t getElapsedTime() const { return millis() - _time; }
       // Check if the value has expired
       bool isExpired() const { return _expiration > 0 && (getElapsedTime() >= _expiration); }
-      // Check if we have a valid value
+      // Check if we have a valid non-expired value
       bool isPresent() const { return _time > 0 && !isExpired(); }
       bool isAbsent() const { return !isPresent(); }
+      // check if the value was never updated (optional is empty since creation)
       bool neverUpdated() const { return _time == 0; }
 
       // Get the value or an alternative one
       T orElse(T&& alt) const& { return isPresent() ? _val : alt; }
-      T orElse(T&& alt) && { return isPresent() ? std::move(_val) : alt; }
+      // Get the value or an alternative one
       const T& orElse(const T& alt) const { return isPresent() ? _val : alt; }
 
       // Get the optional value
@@ -67,7 +80,7 @@ namespace Mycila {
         return _val;
       }
 
-      // reset as if it ws never updated
+      // reset as if it was never updated
       void reset() { _time = 0; }
 
       explicit operator bool() const noexcept { return isPresent(); }

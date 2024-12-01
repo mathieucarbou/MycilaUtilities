@@ -80,7 +80,7 @@ namespace Mycila {
         return (startMinutes < stopMinutes && timeMinutes >= startMinutes && timeMinutes < stopMinutes) || (startMinutes > stopMinutes && (timeMinutes >= startMinutes || timeMinutes < stopMinutes));
       }
 
-      static const std::string toDHHMMSS(uint32_t seconds) {
+      static std::string toDHHMMSS(uint32_t seconds) {
         const uint8_t days = seconds / 86400;
         seconds = seconds % static_cast<uint32_t>(86400);
         const uint8_t hh = seconds / 3600;
