@@ -63,7 +63,43 @@ void setup() {
   Serial.println(value.orElse(20));  // 20
   Serial.println(value.orElse(i));   // 20
   Serial.println(value.orElse(j));   // 20
+
+  pid.setOutputLimits(-500, 5000);
+
+  // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
+  // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
+  // pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
+  // pid.setKp(0.1);
+  // pid.setKi(0.2);
+  // pid.setKd(0.05);
+
+  // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_ERROR);
+  // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
+  // pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_CLAMP);
+  // pid.setKp(0);
+  // pid.setKi(1);
+  // pid.setKd(0);
+
+  pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
+  pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
+  pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
+  pid.setKp(0);
+  pid.setKi(1);
+  pid.setKd(0);
 }
 
-// Destroy default Arduino async task
-void loop() { vTaskDelete(NULL); }
+float grid = -600; // in Watts
+float diverted = 0;
+
+void loop() {
+  float output = pid.compute(grid);
+  float rnd = random(0, 20) * (random(0, 2) == 0 ? -1 : 1);
+  Serial.printf("grid: %.2f, diverted: %.2f, output: %.2f, rnd: %.2f\n", grid, diverted, output, rnd);
+  if (output > 0) {
+    float adjust = output - diverted;
+    grid += adjust;
+  }
+  diverted = output > 0 ? output : 0;
+  grid += rnd;
+  delay(300);
+}
