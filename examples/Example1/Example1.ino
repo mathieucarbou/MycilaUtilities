@@ -86,6 +86,13 @@ void setup() {
   pid.setKp(0);
   pid.setKi(1);
   pid.setKd(0);
+
+  // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
+  // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR_RATE);
+  // pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
+  // pid.setKp(0);
+  // pid.setKi(0);
+  // pid.setKd(1);
 }
 
 float grid = -600; // in Watts

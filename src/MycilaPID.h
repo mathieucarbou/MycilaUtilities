@@ -30,6 +30,8 @@ namespace Mycila {
         D_ON_ERROR = 1,
         // derivative term computed from the input
         D_ON_INPUT = 2,
+        // derivative term computed from the error rate (dTerm = kd * dError / dt) in seconds
+        D_ON_ERROR_RATE = 3,
       };
 
       //  integral anti-windup
@@ -133,15 +135,24 @@ namespace Mycila {
 
         // dTerm
         switch (_dMode) {
-          case DerivativeMode::D_ON_ERROR:
+          case DerivativeMode::D_ON_ERROR: {
             _dTerm = _kd * dError;
             break;
-          case DerivativeMode::D_ON_INPUT:
+          }
+          case DerivativeMode::D_ON_ERROR_RATE: {
+            uint32_t now = millis();
+            _dTerm = _kd * dError * (now - _lastTime) / 1000.0f;
+            _lastTime = now;
+            break;
+          }
+          case DerivativeMode::D_ON_INPUT: {
             _dTerm = -_kd * dInput;
             break;
-          default:
+          }
+          default: {
             assert(false);
             break;
+          }
         }
 
         _output = constrain(_sum + peTerm + _dTerm, _outputMin, _outputMax);
@@ -234,6 +245,7 @@ namespace Mycila {
       float _dTerm = 0;
       // Internal integral sum
       float _sum;
+      uint32_t _lastTime = 0;
   };
 
 } // namespace Mycila
