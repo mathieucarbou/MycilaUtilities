@@ -73,19 +73,19 @@ void setup() {
   // pid.setKi(0.2);
   // pid.setKd(0.05);
 
-  // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_ERROR);
-  // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
-  // pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_CLAMP);
-  // pid.setKp(0);
-  // pid.setKi(1);
-  // pid.setKd(0);
-
-  pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
-  pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
-  pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
+  pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_ERROR);
+  pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_INPUT);
+  pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_CLAMP);
   pid.setKp(0);
   pid.setKi(1);
   pid.setKd(0);
+
+  // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
+  // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
+  // pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
+  // pid.setKp(0);
+  // pid.setKi(1);
+  // pid.setKd(0);
 
   // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
   // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR_RATE);
