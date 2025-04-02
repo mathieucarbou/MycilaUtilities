@@ -26,10 +26,8 @@ namespace Mycila {
       };
 
       enum class DerivativeMode {
-        // derivative term computed from the error
+        // derivative term computed from the error (equivalent as difference of input when setpoint is constant
         D_ON_ERROR = 1,
-        // derivative term computed from the input
-        D_ON_INPUT = 2,
         // derivative term computed from the error rate (dTerm = kd * dError / dt) in seconds
         D_ON_ERROR_RATE = 3,
       };
@@ -94,11 +92,10 @@ namespace Mycila {
       }
 
       float compute(float input) {
-        const float dInput = _reverse ? _input - input : input - _input;
-        const float error = _reverse ? input - _setPoint : _setPoint - input;
-        const float dError = error - _error;
+        const float dInput = _reverse ? input - _input : _input - input;
+        _error = _reverse ? input - _setPoint : _setPoint - input;
 
-        float peTerm = _kp * error;
+        float peTerm = _kp * _error;
         float pmTerm = _kp * dInput;
         switch (_pMode) {
           case ProportionalMode::P_ON_ERROR:
@@ -117,36 +114,32 @@ namespace Mycila {
         }
 
         // pTerm
-        _pTerm = peTerm - pmTerm;
+        _pTerm = peTerm + pmTerm;
 
         // iTerm
-        _iTerm = _ki * error;
+        _iTerm = _ki * _error;
 
         // anti-windup
         if (_icMode == IntegralCorrectionMode::IC_ADVANCED && _ki) {
-          const float iTermOut = _pTerm + _ki * (_iTerm + error);
-          if ((iTermOut > _outputMax && dError > 0) || (iTermOut < _outputMin && dError < 0)) {
+          const float iTermOut = _pTerm + _ki * (_iTerm + _error);
+          if ((iTermOut > _outputMax && dInput > 0) || (iTermOut < _outputMin && dInput < 0)) {
             _iTerm = constrain(iTermOut, -_outputMax, _outputMax);
           }
         }
 
         // integral sum
-        _sum = _icMode == IntegralCorrectionMode::IC_OFF ? (_sum + _iTerm - pmTerm) : constrain(_sum + _iTerm - pmTerm, _outputMin, _outputMax);
+        _sum = _icMode == IntegralCorrectionMode::IC_OFF ? (_sum + _iTerm + pmTerm) : constrain(_sum + _iTerm + pmTerm, _outputMin, _outputMax);
 
         // dTerm
         switch (_dMode) {
           case DerivativeMode::D_ON_ERROR: {
-            _dTerm = _kd * dError;
+            _dTerm = _kd * dInput;
             break;
           }
           case DerivativeMode::D_ON_ERROR_RATE: {
             uint32_t now = millis();
-            _dTerm = _kd * dError * (now - _lastTime) / 1000.0f;
+            _dTerm = _kd * dInput * (now - _lastTime) / 1000.0f;
             _lastTime = now;
-            break;
-          }
-          case DerivativeMode::D_ON_INPUT: {
-            _dTerm = -_kd * dInput;
             break;
           }
           default: {
@@ -158,7 +151,6 @@ namespace Mycila {
         _output = constrain(_sum + peTerm + _dTerm, _outputMin, _outputMax);
 
         this->_input = input;
-        this->_error = error;
 
         return _output;
       }
@@ -220,7 +212,7 @@ namespace Mycila {
 
     private:
       ProportionalMode _pMode = ProportionalMode::P_ON_ERROR;
-      DerivativeMode _dMode = DerivativeMode::D_ON_INPUT;
+      DerivativeMode _dMode = DerivativeMode::D_ON_ERROR;
       IntegralCorrectionMode _icMode = IntegralCorrectionMode::IC_ADVANCED;
       bool _reverse = false;
       float _setPoint = 0;

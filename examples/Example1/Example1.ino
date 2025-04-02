@@ -6,8 +6,15 @@
 #include <MycilaString.h>
 #include <MycilaTime.h>
 
+#define PID_COUNT 3
+
 Mycila::CircularBuffer<int, 5> buffer;
-Mycila::PID pid;
+
+Mycila::PID pids[PID_COUNT] = {
+  Mycila::PID(),
+  Mycila::PID(),
+  Mycila::PID(),
+};
 
 void setup() {
   Serial.begin(115200);
@@ -64,49 +71,50 @@ void setup() {
   Serial.println(value.orElse(i));   // 20
   Serial.println(value.orElse(j));   // 20
 
-  pid.setOutputLimits(-500, 5000);
+  for (size_t i = 0; i < PID_COUNT; i++) {
+    pids[i].setOutputLimits(-300, 4000);
+  }
 
-  // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
-  // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
-  // pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
-  // pid.setKp(0.1);
-  // pid.setKi(0.2);
-  // pid.setKd(0.05);
+  pids[0].setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
+  pids[0].setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
+  pids[0].setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
+  pids[0].setKp(0);
+  pids[0].setKi(0);
+  pids[0].setKd(0.5);
 
-  pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_ERROR);
-  pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_INPUT);
-  pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_CLAMP);
-  pid.setKp(0);
-  pid.setKi(1);
-  pid.setKd(0);
+  pids[1].setProportionalMode(Mycila::PID::ProportionalMode::P_ON_ERROR);
+  pids[1].setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
+  pids[1].setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
+  pids[1].setKp(0);
+  pids[1].setKi(0);
+  pids[1].setKd(0.5);
 
-  // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
-  // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
-  // pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
-  // pid.setKp(0);
-  // pid.setKi(1);
-  // pid.setKd(0);
-
-  // pid.setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
-  // pid.setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR_RATE);
-  // pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
-  // pid.setKp(0);
-  // pid.setKi(0);
-  // pid.setKd(1);
+  pids[2].setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
+  pids[2].setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
+  pids[2].setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
+  pids[2].setKp(0.1);
+  pids[2].setKi(0.2);
+  pids[2].setKd(0.05);
 }
 
-float grid = -600; // in Watts
-float diverted = 0;
+// watts
+float grid[PID_COUNT] = {-600, -600, -600};
+float diverted[PID_COUNT] = {0, 0, 0};
 
 void loop() {
-  float output = pid.compute(grid);
   float rnd = random(0, 20) * (random(0, 2) == 0 ? -1 : 1);
-  Serial.printf("grid: %.2f, diverted: %.2f, output: %.2f, rnd: %.2f\n", grid, diverted, output, rnd);
-  if (output > 0) {
-    float adjust = output - diverted;
-    grid += adjust;
+  for (size_t i = 0; i < PID_COUNT; i++) {
+    float output = pids[i].compute(grid[i]);
+    Serial.printf("#%d: grid: %.2f, diverted: %.2f, output: %.2f, rnd: %.2f\n", i, grid[i], diverted[i], output, rnd);
+    if (output > 0) {
+      float adjust = output - diverted[i];
+      grid[i] += adjust;
+    }
+    diverted[i] = output > 0 ? output : 0;
+    grid[i] += rnd;
   }
-  diverted = output > 0 ? output : 0;
-  grid += rnd;
+
+  Serial.println();
+
   delay(300);
 }
