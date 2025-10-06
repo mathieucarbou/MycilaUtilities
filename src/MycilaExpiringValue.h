@@ -19,21 +19,9 @@ namespace Mycila {
       explicit ExpiringValue(uint32_t expiration = 0) : _time(0), _expiration(expiration) {}
 
       // update the value and returns the old value
-      std::optional<T> update(const T& newVale) {
+      std::optional<T> update(T newVale) {
         if (_time) {
           T old = _val;
-          _val = newVale;
-          _time = millis();
-          return old;
-        }
-        _val = newVale;
-        _time = millis();
-        return std::nullopt;
-      }
-
-      std::optional<T> update(T&& newVale) {
-        if (_time) {
-          T old = std::forward<T>(_val);
           _val = std::forward<T>(newVale);
           _time = millis();
           return old;
