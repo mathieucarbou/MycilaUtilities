@@ -14,23 +14,19 @@
 namespace Mycila {
   class string {
     public:
-      static inline std::string toLowerCase(std::string&& str) {
+      static inline std::string toLowerCase(std::string str) {
         std::transform(str.begin(), str.end(), str.begin(), ::tolower);
         return str;
       }
 
-      static inline std::string toUpperCase(std::string&& str) {
+      static inline std::string toUpperCase(std::string str) {
         std::transform(str.begin(), str.end(), str.begin(), ::toupper);
         return str;
       }
 
-      static inline std::string& trim(std::string& s) { // NOLINT
+      static inline std::string trim(std::string s) { // NOLINT
         s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
         return s;
-      }
-
-      static inline std::string trim(std::string&& s) {
-        return trim(s);
       }
 
       static inline bool endsWith(const std::string& str, const std::string_view suffix) {
