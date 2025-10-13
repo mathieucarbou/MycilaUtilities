@@ -1,20 +1,17 @@
+// SPDX-License-Identifier: MIT
+/*
+ * Copyright (C) 2023-2025 Mathieu Carbou
+ */
 #include <HardwareSerial.h>
 
 #include <MycilaCircularBuffer.h>
 #include <MycilaExpiringValue.h>
-#include <MycilaPID.h>
 #include <MycilaString.h>
 #include <MycilaTime.h>
 
 #define PID_COUNT 3
 
 Mycila::CircularBuffer<int, 5> buffer;
-
-Mycila::PID pids[PID_COUNT] = {
-  Mycila::PID(),
-  Mycila::PID(),
-  Mycila::PID(),
-};
 
 void setup() {
   Serial.begin(115200);
@@ -70,51 +67,8 @@ void setup() {
   Serial.println(value.orElse(20));  // 20
   Serial.println(value.orElse(i));   // 20
   Serial.println(value.orElse(j));   // 20
-
-  for (size_t i = 0; i < PID_COUNT; i++) {
-    pids[i].setOutputLimits(-300, 4000);
-  }
-
-  pids[0].setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
-  pids[0].setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
-  pids[0].setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
-  pids[0].setKp(0);
-  pids[0].setKi(0);
-  pids[0].setKd(0.5);
-
-  pids[1].setProportionalMode(Mycila::PID::ProportionalMode::P_ON_ERROR);
-  pids[1].setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
-  pids[1].setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
-  pids[1].setKp(0);
-  pids[1].setKi(0);
-  pids[1].setKd(0.5);
-
-  pids[2].setProportionalMode(Mycila::PID::ProportionalMode::P_ON_INPUT);
-  pids[2].setDerivativeMode(Mycila::PID::DerivativeMode::D_ON_ERROR);
-  pids[2].setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::IC_ADVANCED);
-  pids[2].setKp(0.1);
-  pids[2].setKi(0.2);
-  pids[2].setKd(0.05);
 }
 
-// watts
-float grid[PID_COUNT] = {-600, -600, -600};
-float diverted[PID_COUNT] = {0, 0, 0};
-
 void loop() {
-  float rnd = random(0, 20) * (random(0, 2) == 0 ? -1 : 1);
-  for (size_t i = 0; i < PID_COUNT; i++) {
-    float output = pids[i].compute(grid[i]);
-    Serial.printf("#%d: grid: %.2f, diverted: %.2f, output: %.2f, rnd: %.2f\n", i, grid[i], diverted[i], output, rnd);
-    if (output > 0) {
-      float adjust = output - diverted[i];
-      grid[i] += adjust;
-    }
-    diverted[i] = output > 0 ? output : 0;
-    grid[i] += rnd;
-  }
-
-  Serial.println();
-
   delay(300);
 }

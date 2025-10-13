@@ -60,19 +60,6 @@ jobs:
           - env: ci-arduino-3
             board: esp32-h2-devkitm-1
 
-          # - env: ci-arduino-rc
-          #   board: esp32dev
-          # - env: ci-arduino-rc
-          #   board: esp32-s2-saola-1
-          # - env: ci-arduino-rc
-          #   board: esp32-s3-devkitc-1
-          # - env: ci-arduino-rc
-          #   board: esp32-c3-devkitc-02
-          # - env: ci-arduino-rc
-          #   board: esp32-c6-devkitc-1
-          # - env: ci-arduino-rc
-          #   board: esp32-h2-devkitm-1
-
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -95,7 +82,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio
           pip install --upgrade intelhex
-      
-      - name: Build Example1
-        run: PLATFORMIO_SRC_DIR=examples/Example1 PIO_BOARD=${{ matrix.board }} pio run -e ${{ matrix.env }}
-      
+
+      - name: Build Demo
+        run: PLATFORMIO_SRC_DIR=examples/Demo PIO_BOARD=${{ matrix.board }} pio run -e ${{ matrix.env }}
+      - name: Build PIDSimulatorTiny
+        run: PLATFORMIO_SRC_DIR=examples/PIDSimulatorTiny PIO_BOARD=${{ matrix.board }} pio run -e ${{ matrix.env }}
