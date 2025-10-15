@@ -15,6 +15,8 @@ This document describes the `Mycila::PID` controller provided by MycilaUtilities
 - Introspection getters for last input/output and P/I/D terms
 - Optional JSON serialization (enable by defining `MYCILA_JSON_SUPPORT` before including the header)
 
+**PID Simulator** available in `examples/PIDSimulator` ([video link](https://youtu.be/aSKE0_tJjhw))
+
 ## Key API
 
 Header: `#include <MycilaPID.h>`
