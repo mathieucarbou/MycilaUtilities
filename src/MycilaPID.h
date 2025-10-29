@@ -85,6 +85,7 @@ namespace Mycila {
       float getPTerm() const { return _pTerm; }
       float getITerm() const { return _iTerm; }
       float getDTerm() const { return _dTerm; }
+      float getFeedForward() const { return _feed; }
 
       /**
        * @brief Get the last time (in microseconds) when compute() was called.
@@ -126,6 +127,14 @@ namespace Mycila {
       void setKi(float ki) { _ki = ki; }
       // PID derivative gain
       void setKd(float kd) { _kd = kd; }
+
+      /**
+       * @brief Set the feed-forward term.
+       * @brief Feed-forward adds a known expected output value to the PID output, improving response time and reducing steady-state error.
+       * @brief Useful when the relationship between setpoint and required output is partially known (e.g., precompensation for known disturbances).
+       * @param feedForward The feed-forward value to add to the PID output (default is 0).
+       */
+      void setFeedForward(float feedForward) { _feed = feedForward; }
 
       // Set all them together and reset
       void setTunings(float kp, float ki, float kd) {
@@ -179,6 +188,7 @@ namespace Mycila {
         _lastInput = NAN;
         _lastError = NAN;
         _lastTime = 0;
+        _feed = 0;
       }
 
       /**
@@ -285,7 +295,7 @@ namespace Mycila {
         }
 
         // calculate output and clamp to output limits
-        _lastOutput = _clamp(_pTerm + _iTerm + _dTerm);
+        _lastOutput = _clamp(_pTerm + _iTerm + _dTerm + _feed);
 
         // remember some values for next time
         _lastInput = input;
@@ -311,6 +321,7 @@ namespace Mycila {
         root["pTerm"] = _pTerm;
         root["iTerm"] = _iTerm;
         root["dTerm"] = _dTerm;
+        root["feed"] = _feed;
         root["last_input"] = _lastInput;
         root["last_output"] = _lastOutput;
         root["last_time"] = _lastTime;
@@ -339,6 +350,7 @@ namespace Mycila {
       float _pTerm = 0;
       float _iTerm = 0;
       float _dTerm = 0;
+      float _feed = 0;
       uint32_t _lastTime = 0;
 
       inline float _clamp(float value) { return _outputMin == _outputMax ? value : constrain(value, _outputMin, _outputMax); }

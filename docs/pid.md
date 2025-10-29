@@ -26,6 +26,7 @@ Header: `#include <MycilaPID.h>`
   - `void setSetpoint(float sp)`
   - `void setKp(float kp)`, `void setKi(float ki)`, `void setKd(float kd)`
   - `void setTunings(float kp, float ki, float kd)` (sets all at once)
+  - `void setFeedForward(float ff)` — set the feed-forward term (added to output)
 
 - Modes
 
@@ -50,7 +51,7 @@ Header: `#include <MycilaPID.h>`
   - `float compute(float input)` — returns a new output using current settings
   - State getters:
     - `getInput()`, `getOutput()`, `getSetpoint()`
-    - `getPTerm()`, `getITerm()`, `getDTerm()`
+    - `getPTerm()`, `getITerm()`, `getDTerm()`, `getFeedForward()`
     - `getKp()`, `getKi()`, `getKd()`
     - `getOutputMin()`, `getOutputMax()`
     - `getProportionalMode()`, `getDerivativeMode()`, `getIntegralCorrectionMode()`
@@ -89,6 +90,20 @@ The controller measures `dt` internally using `micros()` and updates on every `c
 
 When reverse is enabled, the controller inverts the signs of Kp/Ki/Kd internally, effectively reversing the direction of the control action (useful for cooling systems or inverted actuators).
 
+## Feed-forward
+
+Feed-forward allows you to add a known expected output value directly to the PID output, improving response time and reducing steady-state error when you have partial knowledge of the system.
+
+- Use `setFeedForward(float value)` to add a constant term to the output
+- The feed-forward term is added after computing P + I + D: `output = P + I + D + FeedForward`
+- Useful for precompensating known disturbances or expected output values based on setpoint or other system states
+- Example: if you know a certain setpoint typically requires ~50% output, set feed-forward to 50 to reduce the PID's workload
+
+When to use feed-forward:
+- You have a model or empirical relationship between setpoint and required output
+- You want faster response to setpoint changes
+- You want to reduce overshoot by giving the controller a head start
+
 ## Output limits and anti-windup
 
 - Use `setOutputLimits(min, max)` to bound outputs (and I-term when integral correction mode is CLAMP).
@@ -122,6 +137,9 @@ void setup() {
   pid.setDerivativeMode(Mycila::PID::DerivativeMode::ON_INPUT);
   pid.setTimeSampling(false);
   pid.setReverse(false);
+  
+  // Optional: set feed-forward if you know expected baseline output
+  // pid.setFeedForward(50.0f);
 }
 
 void loop() {
