@@ -215,7 +215,7 @@ void setup() {
   pid.setOutputLimits(-300, 4000);
   pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::CLAMP);
   pid.setProportionalMode(Mycila::PID::ProportionalMode::ON_INPUT);
-  pid.setDerivativeMode(Mycila::PID::DerivativeMode::ON_INPUT);
+  pid.setDerivativeMode(Mycila::PID::DerivativeMode::ON_ERROR);
   pid.setKp(0.1);
   pid.setKi(0.2);
   pid.setKd(0.05);

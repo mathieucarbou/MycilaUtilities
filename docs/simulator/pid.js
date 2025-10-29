@@ -12,7 +12,7 @@ class PID {
     this.IntegralCorrectionMode = { OFF: 'off', CLAMP: 'clamp' };
 
     // Configuration
-    this._pMode = this.ProportionalMode.ON_ERROR;
+    this._pMode = this.ProportionalMode.ON_INPUT;
     this._dMode = this.DerivativeMode.ON_ERROR;
     this._icMode = this.IntegralCorrectionMode.CLAMP;
     this._enabled = true;

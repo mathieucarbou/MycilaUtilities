@@ -152,11 +152,32 @@ function initializePID() {
   pid.setOutputLimits(-300, 4000);
   pid.setIntegralCorrectionMode(pid.IntegralCorrectionMode.CLAMP);
   pid.setProportionalMode(pid.ProportionalMode.ON_INPUT);
-  pid.setDerivativeMode(pid.DerivativeMode.ON_INPUT);
+  pid.setDerivativeMode(pid.DerivativeMode.ON_ERROR);
   pid.setKp(0.1);
   pid.setKi(0.2);
   pid.setKd(0.05);
   pid.setSetpoint(0);
+  
+  // Sync UI controls with PID state
+  syncUIWithPID();
+}
+
+/**
+ * Sync UI controls with current PID state
+ */
+function syncUIWithPID() {
+  document.getElementById('kp').value = pid.getKp();
+  document.getElementById('ki').value = pid.getKi();
+  document.getElementById('kd').value = pid.getKd();
+  document.getElementById('setpoint').value = pid.getSetpoint();
+  document.getElementById('feedForward').value = pid.getFeedForward();
+  document.getElementById('reverse').checked = pid.isReverse();
+  document.getElementById('timeSampling').checked = pid.isTimeSampling();
+  document.getElementById('outMin').value = pid.getOutputMin();
+  document.getElementById('outMax').value = pid.getOutputMax();
+  document.getElementById('icMode').value = pid.getIntegralCorrectionMode();
+  document.getElementById('pMode').value = pid.getProportionalMode();
+  document.getElementById('dMode').value = pid.getDerivativeMode();
 }
 
 /**
@@ -285,7 +306,7 @@ function simulationStep() {
   grid += delta;
 
   // Log state (similar to C++ Serial.printf)
-  if (Math.random() < 0.05) { // Log occasionally to avoid console spam
+  // if (Math.random() < 0.05) { // Log occasionally to avoid console spam
     console.log(
       `Solar: ${random_solar.toFixed(2).padStart(7)} | ` +
       `Grid: ${pid.getInput().toFixed(2).padStart(7)} | ` +
@@ -296,7 +317,7 @@ function simulationStep() {
       `Load: ${load.toFixed(2).padStart(7)} | ` +
       `Delta: ${delta.toFixed(2).padStart(7)}`
     );
-  }
+  // }
 
   // Update charts with data (order matches JSON payload: solar, grid, pTerm, iTerm, dTerm, output, load)
   const values = [
