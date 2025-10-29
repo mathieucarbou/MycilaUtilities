@@ -36,6 +36,8 @@ let metricsData = {
   secondPeakError: null,   // Second peak error for damping calculation
   peakCount: 0,            // Count of peaks detected
   lastPeakTime: 0,         // Time of last peak
+  lastActivationTime: null,// Time when controller last became active (output > 0)
+  wasInactive: true,       // Track if we were previously inactive
   startTime: Date.now(),   // Simulation start time
   updateInterval: null     // Interval for metrics updates
 };
@@ -57,99 +59,95 @@ function constrain(value, min, max) {
 /**
  * Update metrics based on current PID state
  */
-function updateMetrics() {
-  const error = pid.getSetpoint() - pid.getInput();
-  const output = pid.getOutput();
-  const elapsedTime = (Date.now() - metricsData.startTime) / 1000; // in seconds
-
-  // For solar diversion: only track error when controller is actively trying to control (output > 0)
-  // When output is 0 or negative, the controller is correctly not diverting (no excess solar)
-  // In this case, being above setpoint is expected and shouldn't count as an error
+function updateMetrics(input, output, setpoint) {
+  const error = setpoint - input;
+  
+  // Only track metrics when actively controlling (output > 0)
+  // or when error is negative (below setpoint is expected when not diverting)
   const isActivelyControlling = output > 0;
   
-  // Only store meaningful errors (when controller can actually do something about it)
-  if (isActivelyControlling || error <= 0) {
-    // Error <= 0 means we're at or below setpoint (good)
-    // OR output > 0 means we're trying to control
-    metricsData.errors.push(error);
-    metricsData.outputs.push(Math.abs(output));
-  } else {
-    // We're above setpoint BUT output is 0/negative (no solar excess to divert)
-    // This is expected behavior, store zero error
-    metricsData.errors.push(0);
-    metricsData.outputs.push(0);
+  // Track when controller becomes active (starts diverting)
+  if (isActivelyControlling && metricsData.wasInactive) {
+    metricsData.lastActivationTime = Date.now();
+    metricsData.wasInactive = false;
+    // Reset response and settling times when starting a new diversion period
+    metricsData.responseTime = null;
+    metricsData.settledTime = null;
+  } else if (!isActivelyControlling && !metricsData.wasInactive) {
+    metricsData.wasInactive = true;
   }
   
-  if (metricsData.errors.length > MAX_POINTS) {
-    metricsData.errors.shift();
-    metricsData.outputs.shift();
-  }
-
-  // Track oscillations (setpoint crossings) only when actively controlling
+  // Only track errors and outputs when actively controlling
+  // When not diverting, grid consumption is expected and not an error
   if (isActivelyControlling) {
-    const errorSign = Math.sign(error);
-    if (metricsData.lastErrorSign !== null && errorSign !== 0 && errorSign !== metricsData.lastErrorSign) {
-      metricsData.oscillationCount++;
-    }
-    if (errorSign !== 0) {
-      metricsData.lastErrorSign = errorSign;
+    metricsData.errors.push(Math.abs(error));
+    metricsData.outputs.push(Math.abs(output));
+    
+    // Keep history limited
+    if (metricsData.errors.length > MAX_POINTS) {
+      metricsData.errors.shift();
+      metricsData.outputs.shift();
     }
   }
-
-  // Track peaks for damping ratio calculation (when actively controlling)
-  // A peak is detected when error changes direction
-  if (isActivelyControlling && metricsData.errors.length > 2) {
-    const prevError = metricsData.errors[metricsData.errors.length - 2];
-    const currentError = error;
-    const absError = Math.abs(error);
-    const absPrevError = Math.abs(prevError);
+  
+  // Response time (time to reach within ±20W for setpoint=0, or 5% for non-zero setpoint)
+  // Only calculate if we're actively controlling and have a valid activation time
+  if (!metricsData.responseTime && isActivelyControlling && metricsData.lastActivationTime) {
+    // Use fixed threshold of ±20W for solar diversion (setpoint = 0)
+    // Use 5% threshold for non-zero setpoints
+    const responseThreshold = pid.getSetpoint() === 0 ? 20 : Math.abs(pid.getSetpoint()) * 0.05;
+    if (Math.abs(error) <= responseThreshold) {
+      metricsData.responseTime = (Date.now() - metricsData.lastActivationTime) / 1000;
+    }
+  }
+  
+  // Settling time (time to stabilize within ±10W for setpoint=0, or 2% for non-zero setpoint)
+  // Only calculate if we're actively controlling and have a valid activation time
+  if (!metricsData.settledTime && isActivelyControlling && metricsData.lastActivationTime) {
+    // Use fixed threshold of ±10W for solar diversion (setpoint = 0)
+    // Use 2% threshold for non-zero setpoints
+    const settlingThreshold = pid.getSetpoint() === 0 ? 10 : Math.abs(pid.getSetpoint()) * 0.02;
+    if (Math.abs(error) <= settlingThreshold) {
+      metricsData.settledTime = (Date.now() - metricsData.lastActivationTime) / 1000;
+    }
+  }
+  
+  // Oscillation detection (setpoint crossings)
+  const errorSign = Math.sign(error);
+  if (metricsData.lastErrorSign !== null && errorSign !== 0 && 
+      metricsData.lastErrorSign !== errorSign && isActivelyControlling) {
+    metricsData.oscillationCount++;
+  }
+  metricsData.lastErrorSign = errorSign;
+  
+  // Peak detection for damping ratio calculation
+  // Only during active control to avoid false peaks
+  if (isActivelyControlling && metricsData.errors.length >= 3) {
+    const currentError = Math.abs(error);
+    const prevError = Math.abs(metricsData.errors[metricsData.errors.length - 2]);
+    const prevPrevError = Math.abs(metricsData.errors[metricsData.errors.length - 3]);
     
-    // Detect if we're at a peak (error magnitude was increasing and now decreasing)
-    if (metricsData.errors.length > 3) {
-      const prevPrevError = metricsData.errors[metricsData.errors.length - 3];
-      const absPrevPrevError = Math.abs(prevPrevError);
-      
-      // Peak detection: magnitude increased then decreased, with minimum spacing between peaks
-      if (absPrevError > absPrevPrevError && absError < absPrevError && 
-          absPrevError > 10 && // Ignore very small oscillations (noise)
-          elapsedTime - metricsData.lastPeakTime > 1) { // At least 1 second between peaks
-        
+    // Detect peak: error was increasing then started decreasing
+    const isPeak = prevError > prevPrevError && prevError > currentError && prevError > 10;
+    
+    if (isPeak) {
+      const now = Date.now();
+      // Filter out noise - require at least 1 second between peaks
+      if (now - metricsData.lastPeakTime > 1000) {
         metricsData.peakCount++;
-        metricsData.lastPeakTime = elapsedTime;
         
         if (metricsData.firstPeakError === null) {
-          metricsData.firstPeakError = absPrevError;
+          metricsData.firstPeakError = prevError;
         } else if (metricsData.secondPeakError === null) {
-          metricsData.secondPeakError = absPrevError;
+          metricsData.secondPeakError = prevError;
         } else {
-          // Shift peaks: use the two most recent
+          // Keep tracking most recent two peaks
           metricsData.firstPeakError = metricsData.secondPeakError;
-          metricsData.secondPeakError = absPrevError;
+          metricsData.secondPeakError = prevError;
         }
+        
+        metricsData.lastPeakTime = now;
       }
-    }
-  }
-
-  // Track response time (time to reach within 5% of setpoint) only when actively controlling
-  if (isActivelyControlling) {
-    const responseThreshold = Math.abs(pid.getSetpoint()) * 0.05;
-    const absError = Math.abs(error);
-    if (metricsData.responseTime === null && absError <= responseThreshold && metricsData.errors.length > 10) {
-      metricsData.responseTime = elapsedTime;
-    }
-  }
-
-  // Track settling time (time to stay within 2% of setpoint) only when actively controlling
-  if (isActivelyControlling) {
-    const settlingThreshold = Math.abs(pid.getSetpoint()) * 0.02;
-    const absError = Math.abs(error);
-    if (absError <= settlingThreshold) {
-      if (metricsData.settledTime === null) {
-        metricsData.settledTime = elapsedTime;
-      }
-    } else {
-      // Reset if we leave the settling zone
-      metricsData.settledTime = null;
     }
   }
 }
@@ -230,10 +228,15 @@ function displayMetrics() {
     (metricsData.oscillationCount < 5 ? 'good' : metricsData.oscillationCount < 20 ? 'warning' : 'bad');
 
   // Control Effort (average absolute output)
-  const avgOutput = metricsData.outputs.reduce((sum, o) => sum + o, 0) / metricsData.outputs.length;
-  document.getElementById('metricControlEffort').textContent = avgOutput.toFixed(1) + ' W';
-  document.getElementById('metricControlEffort').className = 'metric-value ' + 
-    (avgOutput < 500 ? 'good' : avgOutput < 1500 ? 'warning' : 'bad');
+  if (metricsData.outputs.length > 0) {
+    const avgOutput = metricsData.outputs.reduce((sum, o) => sum + o, 0) / metricsData.outputs.length;
+    document.getElementById('metricControlEffort').textContent = avgOutput.toFixed(1) + ' W';
+    document.getElementById('metricControlEffort').className = 'metric-value ' + 
+      (avgOutput < 500 ? 'good' : avgOutput < 1500 ? 'warning' : 'bad');
+  } else {
+    document.getElementById('metricControlEffort').textContent = '--';
+    document.getElementById('metricControlEffort').className = 'metric-value';
+  }
 }
 
 /**
@@ -251,6 +254,8 @@ function resetMetrics() {
     secondPeakError: null,
     peakCount: 0,
     lastPeakTime: 0,
+    lastActivationTime: null,
+    wasInactive: true,
     startTime: Date.now(),
     updateInterval: metricsData.updateInterval
   };
@@ -564,7 +569,7 @@ function simulationStep() {
   updateCharts(values);
   
   // Update metrics
-  updateMetrics();
+  updateMetrics(pid.getInput(), pid.getOutput(), pid.getSetpoint());
 }
 
 /**

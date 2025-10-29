@@ -68,8 +68,8 @@ The simulator provides real-time metrics to evaluate PID controller performance:
    - **ζ < 0.4**: Underdamped (too much oscillation, reduce Kp or increase Kd)
    - **ζ ≈ 0.6-0.8**: Well-damped (optimal - fast response with minimal oscillations)
    - **ζ > 1.0**: Overdamped (slow response, increase Kp or Ki)
-5. **Response Time**: Time to reach within 5% of setpoint during active control - measures reaction speed when solar becomes available.
-6. **Settling Time**: Time to stabilize within 2% of setpoint - indicates when the system reaches steady state.
+5. **Response Time**: Time to reach within ±20W of setpoint, measured from when the controller starts diverting power (output > 0). Measures reaction speed when solar excess becomes available.
+6. **Settling Time**: Time to stabilize within ±10W of setpoint, measured from when the controller starts diverting power. Indicates when the system reaches steady state and maintains stable control.
 7. **Oscillations**: Number of setpoint crossings during active control - too many indicates unstable tuning.
 8. **Control Effort**: Average output magnitude - shows how hard the controller works. Lower effort with good performance is ideal.
 
