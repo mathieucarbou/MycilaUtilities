@@ -383,9 +383,9 @@ function initializePID() {
   pid.setIntegralCorrectionMode(pid.IntegralCorrectionMode.CLAMP);
   pid.setProportionalMode(pid.ProportionalMode.ON_INPUT);
   pid.setDerivativeMode(pid.DerivativeMode.ON_ERROR);
-  pid.setKp(0.1);
-  pid.setKi(0.2);
-  pid.setKd(0.05);
+  pid.setKp(0.2);
+  pid.setKi(0.4);
+  pid.setKd(0.02);
   pid.setSetpoint(0);
   
   // Sync UI controls with PID state
