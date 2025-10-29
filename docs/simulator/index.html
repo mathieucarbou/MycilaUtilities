@@ -16,6 +16,52 @@
 
     <div id="charts"></div>
 
+    <div class="metrics-section">
+      <h3>Performance Metrics <span class="info-icon" title="Real-time analysis of PID controller performance">ℹ️</span></h3>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Error (Avg)</div>
+          <div class="metric-value" id="metricAvgError">--</div>
+          <div class="metric-desc">Error when actively diverting</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Error (RMS)</div>
+          <div class="metric-value" id="metricRmsError">--</div>
+          <div class="metric-desc">RMS error during active control</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Stability</div>
+          <div class="metric-value" id="metricStability">--</div>
+          <div class="metric-desc">Control consistency</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Overshoot</div>
+          <div class="metric-value" id="metricOvershoot">--</div>
+          <div class="metric-desc">Max overshoot when diverting</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Response Time</div>
+          <div class="metric-value" id="metricResponseTime">--</div>
+          <div class="metric-desc">Time to reach ±5% of setpoint</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Settling Time</div>
+          <div class="metric-value" id="metricSettlingTime">--</div>
+          <div class="metric-desc">Time to stabilize within ±2%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Oscillations</div>
+          <div class="metric-value" id="metricOscillations">--</div>
+          <div class="metric-desc">Number of setpoint crossings</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Control Effort</div>
+          <div class="metric-value" id="metricControlEffort">--</div>
+          <div class="metric-desc">Average output magnitude</div>
+        </div>
+      </div>
+    </div>
+
     <div class="controls-section">
       <h3>PID Parameters</h3>
       <div class="controls">

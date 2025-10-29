@@ -24,6 +24,19 @@ let random_load_high = 0;  // random high load up to 1000W
 let random_load_low = 0;   // random low load between -20W and +20W
 let random_solar = 0;      // random solar power generation between 0W and 1000W
 
+// Metrics tracking
+let metricsData = {
+  errors: [],              // Error history (setpoint - input)
+  outputs: [],             // Output history
+  settledTime: null,       // Time when system settled
+  responseTime: null,      // Time to reach 95% of setpoint
+  maxOvershoot: 0,         // Maximum overshoot
+  oscillationCount: 0,     // Number of setpoint crossings
+  lastErrorSign: null,     // Sign of last error (for oscillation detection)
+  startTime: Date.now(),   // Simulation start time
+  updateInterval: null     // Interval for metrics updates
+};
+
 /**
  * Random integer helper (inclusive)
  */
@@ -36,6 +49,170 @@ function randomInt(min, max) {
  */
 function constrain(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Update metrics based on current PID state
+ */
+function updateMetrics() {
+  const error = pid.getSetpoint() - pid.getInput();
+  const output = pid.getOutput();
+  const elapsedTime = (Date.now() - metricsData.startTime) / 1000; // in seconds
+
+  // For solar diversion: only track error when controller is actively trying to control (output > 0)
+  // When output is 0 or negative, the controller is correctly not diverting (no excess solar)
+  // In this case, being above setpoint is expected and shouldn't count as an error
+  const isActivelyControlling = output > 0;
+  
+  // Only store meaningful errors (when controller can actually do something about it)
+  if (isActivelyControlling || error <= 0) {
+    // Error <= 0 means we're at or below setpoint (good)
+    // OR output > 0 means we're trying to control
+    metricsData.errors.push(error);
+    metricsData.outputs.push(Math.abs(output));
+  } else {
+    // We're above setpoint BUT output is 0/negative (no solar excess to divert)
+    // This is expected behavior, store zero error
+    metricsData.errors.push(0);
+    metricsData.outputs.push(0);
+  }
+  
+  if (metricsData.errors.length > MAX_POINTS) {
+    metricsData.errors.shift();
+    metricsData.outputs.shift();
+  }
+
+  // Track oscillations (setpoint crossings) only when actively controlling
+  if (isActivelyControlling) {
+    const errorSign = Math.sign(error);
+    if (metricsData.lastErrorSign !== null && errorSign !== 0 && errorSign !== metricsData.lastErrorSign) {
+      metricsData.oscillationCount++;
+    }
+    if (errorSign !== 0) {
+      metricsData.lastErrorSign = errorSign;
+    }
+  }
+
+  // Track max overshoot only when we have power to divert (actively controlling)
+  if (isActivelyControlling) {
+    const absError = Math.abs(error);
+    if (absError > metricsData.maxOvershoot) {
+      metricsData.maxOvershoot = absError;
+    }
+  }
+
+  // Track response time (time to reach within 5% of setpoint) only when actively controlling
+  if (isActivelyControlling) {
+    const responseThreshold = Math.abs(pid.getSetpoint()) * 0.05;
+    const absError = Math.abs(error);
+    if (metricsData.responseTime === null && absError <= responseThreshold && metricsData.errors.length > 10) {
+      metricsData.responseTime = elapsedTime;
+    }
+  }
+
+  // Track settling time (time to stay within 2% of setpoint) only when actively controlling
+  if (isActivelyControlling) {
+    const settlingThreshold = Math.abs(pid.getSetpoint()) * 0.02;
+    const absError = Math.abs(error);
+    if (absError <= settlingThreshold) {
+      if (metricsData.settledTime === null) {
+        metricsData.settledTime = elapsedTime;
+      }
+    } else {
+      // Reset if we leave the settling zone
+      metricsData.settledTime = null;
+    }
+  }
+}
+
+/**
+ * Calculate and display metrics
+ */
+function displayMetrics() {
+  if (metricsData.errors.length < 2) {
+    return; // Not enough data yet
+  }
+
+  // Average Error
+  const avgError = metricsData.errors.reduce((sum, e) => sum + Math.abs(e), 0) / metricsData.errors.length;
+  document.getElementById('metricAvgError').textContent = avgError.toFixed(1) + ' W';
+  document.getElementById('metricAvgError').className = 'metric-value ' + 
+    (avgError < 10 ? 'good' : avgError < 50 ? 'warning' : 'bad');
+
+  // RMS Error
+  const rmsError = Math.sqrt(metricsData.errors.reduce((sum, e) => sum + e * e, 0) / metricsData.errors.length);
+  document.getElementById('metricRmsError').textContent = rmsError.toFixed(1) + ' W';
+  document.getElementById('metricRmsError').className = 'metric-value ' + 
+    (rmsError < 15 ? 'good' : rmsError < 75 ? 'warning' : 'bad');
+
+  // Stability (standard deviation of recent errors)
+  const mean = metricsData.errors.reduce((sum, e) => sum + e, 0) / metricsData.errors.length;
+  const variance = metricsData.errors.reduce((sum, e) => sum + Math.pow(e - mean, 2), 0) / metricsData.errors.length;
+  const stability = Math.sqrt(variance);
+  document.getElementById('metricStability').textContent = stability.toFixed(1) + ' W';
+  document.getElementById('metricStability').className = 'metric-value ' + 
+    (stability < 20 ? 'good' : stability < 100 ? 'warning' : 'bad');
+
+  // Max Overshoot
+  document.getElementById('metricOvershoot').textContent = metricsData.maxOvershoot.toFixed(1) + ' W';
+  document.getElementById('metricOvershoot').className = 'metric-value ' + 
+    (metricsData.maxOvershoot < 50 ? 'good' : metricsData.maxOvershoot < 200 ? 'warning' : 'bad');
+
+  // Response Time
+  if (metricsData.responseTime !== null) {
+    document.getElementById('metricResponseTime').textContent = metricsData.responseTime.toFixed(1) + ' s';
+    document.getElementById('metricResponseTime').className = 'metric-value ' + 
+      (metricsData.responseTime < 5 ? 'good' : metricsData.responseTime < 15 ? 'warning' : 'bad');
+  } else {
+    document.getElementById('metricResponseTime').textContent = 'Waiting...';
+    document.getElementById('metricResponseTime').className = 'metric-value';
+  }
+
+  // Settling Time
+  if (metricsData.settledTime !== null) {
+    const currentSettlingTime = (Date.now() - metricsData.startTime) / 1000 - metricsData.settledTime;
+    document.getElementById('metricSettlingTime').textContent = metricsData.settledTime.toFixed(1) + ' s';
+    document.getElementById('metricSettlingTime').className = 'metric-value ' + 
+      (metricsData.settledTime < 10 ? 'good' : metricsData.settledTime < 30 ? 'warning' : 'bad');
+  } else {
+    document.getElementById('metricSettlingTime').textContent = 'Not settled';
+    document.getElementById('metricSettlingTime').className = 'metric-value';
+  }
+
+  // Oscillations
+  document.getElementById('metricOscillations').textContent = metricsData.oscillationCount.toString();
+  document.getElementById('metricOscillations').className = 'metric-value ' + 
+    (metricsData.oscillationCount < 5 ? 'good' : metricsData.oscillationCount < 20 ? 'warning' : 'bad');
+
+  // Control Effort (average absolute output)
+  const avgOutput = metricsData.outputs.reduce((sum, o) => sum + o, 0) / metricsData.outputs.length;
+  document.getElementById('metricControlEffort').textContent = avgOutput.toFixed(1) + ' W';
+  document.getElementById('metricControlEffort').className = 'metric-value ' + 
+    (avgOutput < 500 ? 'good' : avgOutput < 1500 ? 'warning' : 'bad');
+}
+
+/**
+ * Reset metrics
+ */
+function resetMetrics() {
+  metricsData = {
+    errors: [],
+    outputs: [],
+    settledTime: null,
+    responseTime: null,
+    maxOvershoot: 0,
+    oscillationCount: 0,
+    lastErrorSign: null,
+    startTime: Date.now(),
+    updateInterval: metricsData.updateInterval
+  };
+  
+  // Clear display
+  ['metricAvgError', 'metricRmsError', 'metricStability', 'metricOvershoot', 
+   'metricResponseTime', 'metricSettlingTime', 'metricOscillations', 'metricControlEffort'].forEach(id => {
+    document.getElementById(id).textContent = '--';
+    document.getElementById(id).className = 'metric-value';
+  });
 }
 
 /**
@@ -209,6 +386,9 @@ function applyParameters() {
   pid.setProportionalMode(pMode);
   pid.setDerivativeMode(dMode);
 
+  // Reset metrics when parameters change to get fresh measurements
+  resetMetrics();
+
   console.log('PID parameters applied:', pid.toJSON());
 }
 
@@ -229,6 +409,9 @@ function resetSimulation() {
     chart.data.datasets[0].data = [];
     chart.update('none');
   });
+
+  // Reset metrics
+  resetMetrics();
 
   console.log('Simulation reset');
 }
@@ -306,7 +489,7 @@ function simulationStep() {
   grid += delta;
 
   // Log state (similar to C++ Serial.printf)
-  // if (Math.random() < 0.05) { // Log occasionally to avoid console spam
+  if (Math.random() < 0.05) { // Log occasionally to avoid console spam
     console.log(
       `Solar: ${random_solar.toFixed(2).padStart(7)} | ` +
       `Grid: ${pid.getInput().toFixed(2).padStart(7)} | ` +
@@ -317,7 +500,7 @@ function simulationStep() {
       `Load: ${load.toFixed(2).padStart(7)} | ` +
       `Delta: ${delta.toFixed(2).padStart(7)}`
     );
-  // }
+  }
 
   // Update charts with data (order matches JSON payload: solar, grid, pTerm, iTerm, dTerm, output, load)
   const values = [
@@ -331,6 +514,9 @@ function simulationStep() {
   ];
 
   updateCharts(values);
+  
+  // Update metrics
+  updateMetrics();
 }
 
 /**
@@ -340,7 +526,15 @@ function startSimulation() {
   if (simulationInterval) {
     clearInterval(simulationInterval);
   }
+  if (metricsData.updateInterval) {
+    clearInterval(metricsData.updateInterval);
+  }
+  
   simulationInterval = setInterval(simulationStep, SEND_INTERVAL);
+  
+  // Update metrics display every second
+  metricsData.updateInterval = setInterval(displayMetrics, 1000);
+  
   console.log('Simulation started');
 }
 
@@ -370,5 +564,8 @@ window.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('beforeunload', () => {
   if (simulationInterval) {
     clearInterval(simulationInterval);
+  }
+  if (metricsData.updateInterval) {
+    clearInterval(metricsData.updateInterval);
   }
 });
