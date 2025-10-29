@@ -167,6 +167,7 @@ function applyParameters() {
   const ki = parseFloat(document.getElementById('ki').value);
   const kd = parseFloat(document.getElementById('kd').value);
   const setpoint = parseFloat(document.getElementById('setpoint').value);
+  const feedForward = parseFloat(document.getElementById('feedForward').value);
   const reverse = document.getElementById('reverse').checked;
   const timeSampling = document.getElementById('timeSampling').checked;
   const outMin = parseFloat(document.getElementById('outMin').value);
@@ -179,6 +180,7 @@ function applyParameters() {
   pid.setKi(ki);
   pid.setKd(kd);
   pid.setSetpoint(setpoint);
+  pid.setFeedForward(feedForward);
   pid.setReverse(reverse);
   pid.setTimeSampling(timeSampling);
   pid.setOutputLimits(outMin, outMax);

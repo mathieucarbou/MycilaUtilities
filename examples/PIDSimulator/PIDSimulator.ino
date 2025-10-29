@@ -49,6 +49,7 @@ String page = R"rawliteral(
     <label>Ki<input id="ki" type="number" step="0.01" value="0.1"></label>
     <label>Kd<input id="kd" type="number" step="0.01" value="0.05"></label>
     <label>Setpoint<input id="setpoint" type="number" step="1" value="-600"></label>
+    <label>Feed Forward<input id="feedForward" type="number" step="1" value="0"></label>
     <label>Reverse<input id="reverse" type="checkbox"></label>
     <label>TimeSampling<input id="timeSampling" type="checkbox"></label>
     <label>Output Min<input id="outMin" type="number" step="1" value="-300"></label>
@@ -140,6 +141,7 @@ String page = R"rawliteral(
           // server sent PID state (on connect) -> populate controls
           try {
             if (typeof msg.setpoint !== 'undefined') document.getElementById('setpoint').value = msg.setpoint;
+            if (typeof msg.feedForward !== 'undefined') document.getElementById('feedForward').value = msg.feedForward;
             if (typeof msg.reverse !== 'undefined') document.getElementById('reverse').checked = !!msg.reverse;
             if (typeof msg.timeSampling !== 'undefined') document.getElementById('timeSampling').checked = !!msg.timeSampling;
             if (typeof msg.output_min !== 'undefined') document.getElementById('outMin').value = msg.output_min;
@@ -167,15 +169,15 @@ String page = R"rawliteral(
         kp: parseFloat(document.getElementById('kp').value),
         ki: parseFloat(document.getElementById('ki').value),
         kd: parseFloat(document.getElementById('kd').value),
-        setpoint: parseFloat(document.getElementById('setpoint').value)
-      , reverse: document.getElementById('reverse').checked
-      , timeSampling: document.getElementById('timeSampling').checked
-      , output_min: parseFloat(document.getElementById('outMin').value)
-      , output_max: parseFloat(document.getElementById('outMax').value)
-      , icMode: document.getElementById('icMode').value
-      , pMode: document.getElementById('pMode').value
-      , dMode: document.getElementById('dMode').value
-      
+        setpoint: parseFloat(document.getElementById('setpoint').value),
+        feedForward: parseFloat(document.getElementById('feedForward').value),
+        reverse: document.getElementById('reverse').checked,
+        timeSampling: document.getElementById('timeSampling').checked,
+        output_min: parseFloat(document.getElementById('outMin').value),
+        output_max: parseFloat(document.getElementById('outMax').value),
+        icMode: document.getElementById('icMode').value,
+        pMode: document.getElementById('pMode').value,
+        dMode: document.getElementById('dMode').value
       };
       ws.send(JSON.stringify(payload));
     };
@@ -252,6 +254,11 @@ void setup() {
         Serial.printf("Kd updated to %.3f\n", pid.getKd());
       }
 
+      if (!obj["feedForward"].isNull()) {
+        pid.setFeedForward(obj["feedForward"]);
+        Serial.printf("FeedForward updated to %.2f\n", pid.getFeedForward());
+      }
+
       if (!obj["timeSampling"].isNull()) {
         pid.setTimeSampling(obj["timeSampling"]);
         Serial.printf("TimeSampling mode updated to %d\n", pid.isTimeSampling());
@@ -324,6 +331,7 @@ void setup() {
     obj["output_min"] = pid.getOutputMin();
     obj["output_max"] = pid.getOutputMax();
     obj["setpoint"] = pid.getSetpoint();
+    obj["feedForward"] = pid.getFeedForward();
     AsyncWebSocketMessageBuffer* buffer = ws.makeBuffer(measureJson(doc));
     serializeJson(doc, buffer->get(), buffer->length());
     client->text(buffer);
