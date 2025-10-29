@@ -1,0 +1,278 @@
+/* PID Simulator Styles */
+
+:root {
+  --primary-color: #4363d8;
+  --secondary-color: #666;
+  --border-color: #ddd;
+  --bg-light: #f9f9f9;
+  --text-color: #333;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  color: var(--text-color);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+h1 {
+  font-size: 2em;
+  color: var(--primary-color);
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: var(--secondary-color);
+  font-size: 0.95em;
+}
+
+h3 {
+  font-size: 1.1em;
+  color: var(--text-color);
+  margin-bottom: 12px;
+  margin-top: 20px;
+}
+
+/* Charts */
+#charts {
+  margin-bottom: 24px;
+}
+
+.chart-wrapper {
+  margin-bottom: 16px;
+  background: var(--bg-light);
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  min-height: 160px;
+  max-height: 160px;
+  overflow: hidden;
+}
+
+.chart-title {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-color);
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.chart-title:hover {
+  color: var(--primary-color);
+}
+
+.chart-title.collapsed {
+  color: var(--secondary-color);
+}
+
+.chart-canvas {
+  width: 100% !important;
+  height: 120px !important;
+  max-height: 120px !important;
+  transition: all 0.3s ease;
+}
+
+/* Controls */
+.controls-section {
+  background: var(--bg-light);
+  padding: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--secondary-color);
+  min-width: 120px;
+}
+
+label span {
+  margin-left: 6px;
+  display: inline;
+}
+
+input[type="number"],
+select {
+  margin-top: 4px;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+input[type="number"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+input[type="checkbox"] {
+  margin-top: 8px;
+  margin-right: 6px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+label:has(input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #3451b8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-light);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Footer */
+footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+  font-size: 0.9em;
+  color: var(--secondary-color);
+}
+
+footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  .container {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 1.5em;
+  }
+
+  .controls {
+    gap: 8px;
+  }
+
+  label {
+    min-width: 100px;
+  }
+
+  .chart-canvas {
+    height: 100px !important;
+    max-height: 100px !important;
+  }
+
+  .chart-wrapper {
+    min-height: 140px;
+    max-height: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls {
+    flex-direction: column;
+  }
+
+  label {
+    width: 100%;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
+}

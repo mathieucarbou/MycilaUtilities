@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PID Simulator - Mycila Utilities</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>PID Simulator</h1>
+      <p class="subtitle">Solar Power Diversion Controller Simulator</p>
+    </header>
+
+    <div id="charts"></div>
+
+    <div class="controls-section">
+      <h3>PID Parameters</h3>
+      <div class="controls">
+        <label>Kp<input id="kp" type="number" step="0.01" value="0.1"></label>
+        <label>Ki<input id="ki" type="number" step="0.01" value="0.2"></label>
+        <label>Kd<input id="kd" type="number" step="0.01" value="0.05"></label>
+        <label>Setpoint (W)<input id="setpoint" type="number" step="1" value="0"></label>
+      </div>
+
+      <h3>Controller Settings</h3>
+      <div class="controls">
+        <label>
+          <input id="reverse" type="checkbox">
+          <span>Reverse Mode</span>
+        </label>
+        <label>
+          <input id="timeSampling" type="checkbox">
+          <span>Time Sampling</span>
+        </label>
+        <label>Output Min (W)<input id="outMin" type="number" step="1" value="-300"></label>
+        <label>Output Max (W)<input id="outMax" type="number" step="1" value="4000"></label>
+      </div>
+
+      <h3>Advanced Modes</h3>
+      <div class="controls">
+        <label>Integral Correction
+          <select id="icMode">
+            <option value="clamp">CLAMP</option>
+            <option value="off">OFF</option>
+          </select>
+        </label>
+        <label>Proportional Mode
+          <select id="pMode">
+            <option value="error">ON_ERROR</option>
+            <option value="input">ON_INPUT</option>
+          </select>
+        </label>
+        <label>Derivative Mode
+          <select id="dMode">
+            <option value="error">ON_ERROR</option>
+            <option value="input">ON_INPUT</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="button-group">
+        <button id="apply" class="btn-primary">Apply Settings</button>
+        <button id="resetBtn" class="btn-secondary">Reset</button>
+        <button id="pause" class="btn-secondary">Pause</button>
+        <button id="resume" class="btn-secondary" disabled>Resume</button>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        This simulator demonstrates a PID controller managing solar power excess diversion to a load.
+        <br>
+        Learn more about the <a href="../pid.md" target="_blank">MycilaPID library</a>.
+      </p>
+    </footer>
+  </div>
+
+  <script src="pid.js"></script>
+  <script src="simulator.js"></script>
+</body>
+</html>

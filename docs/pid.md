@@ -2,6 +2,21 @@
 
 This document describes the `Mycila::PID` controller provided by MycilaUtilities. It consolidates header documentation (`src/MycilaPID.h`) and adds examples and best practices.
 
+- [Overview](#overview)
+- [Key API](#key-api)
+- [Modes explained](#modes-explained)
+- [Time sampling](#time-sampling)
+- [Reverse mode](#reverse-mode)
+- [Feed-forward](#feed-forward)
+- [Output limits and anti-windup](#output-limits-and-anti-windup)
+- [Lifecycle patterns](#lifecycle-patterns)
+- [Quick start example](#quick-start-example)
+- [JSON integration example](#json-integration-example)
+- [Best practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+- [PIDSimulator example — Solar diversion demo](#pidsimulator-example--solar-diversion-demo)
+
 ## Overview
 
 `Mycila::PID` is a compact, efficient, and flexible PID controller designed for embedded applications (Arduino/ESP32). It supports:
@@ -100,6 +115,7 @@ Feed-forward allows you to add a known expected output value directly to the PID
 - Example: if you know a certain setpoint typically requires ~50% output, set feed-forward to 50 to reduce the PID's workload
 
 When to use feed-forward:
+
 - You have a model or empirical relationship between setpoint and required output
 - You want faster response to setpoint changes
 - You want to reduce overshoot by giving the controller a head start
@@ -137,7 +153,7 @@ void setup() {
   pid.setDerivativeMode(Mycila::PID::DerivativeMode::ON_INPUT);
   pid.setTimeSampling(false);
   pid.setReverse(false);
-  
+
   // Optional: set feed-forward if you know expected baseline output
   // pid.setFeedForward(50.0f);
 }
@@ -216,3 +232,7 @@ How to run
 Tip: Start with conservative gains (e.g., small Ki/Kd) and enable output limits with `CLAMP` integral correction to reduce overshoot.
 
 | [![](https://mathieu.carbou.me/MycilaUtilities/assets/pid-graph.jpeg)](https://mathieu.carbou.me/MycilaUtilities/assets/pid-graph.jpeg) | [![](https://mathieu.carbou.me/MycilaUtilities/assets/pid-console.jpeg)](https://mathieu.carbou.me/MycilaUtilities/assets/pid-console.jpeg) |
+
+**Web version**
+
+An online version is available now at **[https://mathieu.carbou.me/MycilaUtilities/simulator/](https://mathieu.carbou.me/MycilaUtilities/simulator/)**
