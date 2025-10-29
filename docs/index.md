@@ -42,7 +42,9 @@ A compact and flexible PID controller. Key features:
 - Reverse mode, time-sampling mode, pause/resume, and reset with optional initial output
 - State getters (pTerm/iTerm/dTerm/last input/output) and optional JSON export when `MYCILA_JSON_SUPPORT` is enabled
 
-**PID Simulator** available in `examples/PIDSimulator` ([video link](https://youtu.be/aSKE0_tJjhw))
+**PID Simulator** available in `examples/PIDSimulator`:
+- [video link](https://youtu.be/aSKE0_tJjhw)
+- [PID Simulator Web version](https://mathieu.carbou.me/MycilaUtilities/simulator/)
 
 **Full PID controller documentation** is available at [https://mathieu.carbou.me/MycilaUtilities/pid](https://mathieu.carbou.me/MycilaUtilities/pid)
 
