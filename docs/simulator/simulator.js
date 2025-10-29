@@ -30,9 +30,12 @@ let metricsData = {
   outputs: [],             // Output history
   settledTime: null,       // Time when system settled
   responseTime: null,      // Time to reach 95% of setpoint
-  maxOvershoot: 0,         // Maximum overshoot
   oscillationCount: 0,     // Number of setpoint crossings
   lastErrorSign: null,     // Sign of last error (for oscillation detection)
+  firstPeakError: null,    // First peak error for damping calculation
+  secondPeakError: null,   // Second peak error for damping calculation
+  peakCount: 0,            // Count of peaks detected
+  lastPeakTime: 0,         // Time of last peak
   startTime: Date.now(),   // Simulation start time
   updateInterval: null     // Interval for metrics updates
 };
@@ -93,11 +96,37 @@ function updateMetrics() {
     }
   }
 
-  // Track max overshoot only when we have power to divert (actively controlling)
-  if (isActivelyControlling) {
+  // Track peaks for damping ratio calculation (when actively controlling)
+  // A peak is detected when error changes direction
+  if (isActivelyControlling && metricsData.errors.length > 2) {
+    const prevError = metricsData.errors[metricsData.errors.length - 2];
+    const currentError = error;
     const absError = Math.abs(error);
-    if (absError > metricsData.maxOvershoot) {
-      metricsData.maxOvershoot = absError;
+    const absPrevError = Math.abs(prevError);
+    
+    // Detect if we're at a peak (error magnitude was increasing and now decreasing)
+    if (metricsData.errors.length > 3) {
+      const prevPrevError = metricsData.errors[metricsData.errors.length - 3];
+      const absPrevPrevError = Math.abs(prevPrevError);
+      
+      // Peak detection: magnitude increased then decreased, with minimum spacing between peaks
+      if (absPrevError > absPrevPrevError && absError < absPrevError && 
+          absPrevError > 10 && // Ignore very small oscillations (noise)
+          elapsedTime - metricsData.lastPeakTime > 1) { // At least 1 second between peaks
+        
+        metricsData.peakCount++;
+        metricsData.lastPeakTime = elapsedTime;
+        
+        if (metricsData.firstPeakError === null) {
+          metricsData.firstPeakError = absPrevError;
+        } else if (metricsData.secondPeakError === null) {
+          metricsData.secondPeakError = absPrevError;
+        } else {
+          // Shift peaks: use the two most recent
+          metricsData.firstPeakError = metricsData.secondPeakError;
+          metricsData.secondPeakError = absPrevError;
+        }
+      }
     }
   }
 
@@ -153,10 +182,26 @@ function displayMetrics() {
   document.getElementById('metricStability').className = 'metric-value ' + 
     (stability < 20 ? 'good' : stability < 100 ? 'warning' : 'bad');
 
-  // Max Overshoot
-  document.getElementById('metricOvershoot').textContent = metricsData.maxOvershoot.toFixed(1) + ' W';
-  document.getElementById('metricOvershoot').className = 'metric-value ' + 
-    (metricsData.maxOvershoot < 50 ? 'good' : metricsData.maxOvershoot < 200 ? 'warning' : 'bad');
+  // Damping Ratio (ζ) using logarithmic decrement method
+  // ζ = ln(x1/x2) / sqrt(4π² + ln²(x1/x2))
+  // where x1 and x2 are consecutive peak amplitudes
+  if (metricsData.firstPeakError !== null && metricsData.secondPeakError !== null && 
+      metricsData.secondPeakError > 0 && metricsData.firstPeakError > metricsData.secondPeakError) {
+    const ratio = metricsData.firstPeakError / metricsData.secondPeakError;
+    const lnRatio = Math.log(ratio);
+    const damping = lnRatio / Math.sqrt(4 * Math.PI * Math.PI + lnRatio * lnRatio);
+    
+    document.getElementById('metricDamping').textContent = damping.toFixed(3);
+    document.getElementById('metricDamping').className = 'metric-value ' + 
+      (damping >= 0.6 && damping <= 0.8 ? 'good' : damping >= 0.4 && damping <= 1.0 ? 'warning' : 'bad');
+  } else if (metricsData.oscillationCount === 0 && metricsData.errors.length > 50) {
+    // No oscillations detected - likely overdamped
+    document.getElementById('metricDamping').textContent = '>1.0';
+    document.getElementById('metricDamping').className = 'metric-value warning';
+  } else {
+    document.getElementById('metricDamping').textContent = 'Calculating...';
+    document.getElementById('metricDamping').className = 'metric-value';
+  }
 
   // Response Time
   if (metricsData.responseTime !== null) {
@@ -200,15 +245,18 @@ function resetMetrics() {
     outputs: [],
     settledTime: null,
     responseTime: null,
-    maxOvershoot: 0,
     oscillationCount: 0,
     lastErrorSign: null,
+    firstPeakError: null,
+    secondPeakError: null,
+    peakCount: 0,
+    lastPeakTime: 0,
     startTime: Date.now(),
     updateInterval: metricsData.updateInterval
   };
   
   // Clear display
-  ['metricAvgError', 'metricRmsError', 'metricStability', 'metricOvershoot', 
+  ['metricAvgError', 'metricRmsError', 'metricStability', 'metricDamping',
    'metricResponseTime', 'metricSettlingTime', 'metricOscillations', 'metricControlEffort'].forEach(id => {
     document.getElementById(id).textContent = '--';
     document.getElementById(id).className = 'metric-value';

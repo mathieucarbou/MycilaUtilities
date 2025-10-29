@@ -10,7 +10,7 @@ This is a JavaScript implementation of the PID Simulator originally written in C
 
 - **Real-time PID Simulation**: Watch the PID controller manage solar power diversion in real-time
 - **Interactive Charts**: 7 separate charts showing Solar, Grid, pTerm, iTerm, dTerm, Output, and Load
-- **Performance Metrics**: Live analysis of PID controller effectiveness with 8 key metrics
+- **Performance Metrics**: Live analysis of PID controller effectiveness with 8 key metrics including damping ratio
 - **Full PID Control**: Adjust all PID parameters (Kp, Ki, Kd, setpoint, feed-forward)
 - **Advanced Settings**: Configure reverse mode, time sampling, output limits
 - **Controller Modes**: 
@@ -64,7 +64,10 @@ The simulator provides real-time metrics to evaluate PID controller performance:
 1. **Error (Avg)**: Average absolute distance from setpoint *when actively diverting* - lower is better. Indicates control accuracy when excess solar is available.
 2. **Error (RMS)**: Root Mean Square error during active control - measures tracking performance when diverting power.
 3. **Stability**: Standard deviation of errors - shows how consistent the controller is. Lower values mean more stable control.
-4. **Overshoot**: Maximum deviation from setpoint *when actively controlling* - measures how much the controller overshoots when diverting.
+4. **Damping Ratio (ζ)**: Measures how oscillations decay in the system. Calculated using the logarithmic decrement method from consecutive oscillation peaks.
+   - **ζ < 0.4**: Underdamped (too much oscillation, reduce Kp or increase Kd)
+   - **ζ ≈ 0.6-0.8**: Well-damped (optimal - fast response with minimal oscillations)
+   - **ζ > 1.0**: Overdamped (slow response, increase Kp or Ki)
 5. **Response Time**: Time to reach within 5% of setpoint during active control - measures reaction speed when solar becomes available.
 6. **Settling Time**: Time to stabilize within 2% of setpoint - indicates when the system reaches steady state.
 7. **Oscillations**: Number of setpoint crossings during active control - too many indicates unstable tuning.
