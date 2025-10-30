@@ -22,7 +22,11 @@ let grid = 0;              // grid power in watts
 let load = 0;              // load where to divert excess power watts
 let random_load_high = 0;  // random high load up to 1000W
 let random_load_low = 0;   // random low load between -20W and +20W
-let random_solar = 0;      // random solar power generation between 0W and 1000W
+let random_solar = 0;      // random solar power generation between 0W and 2000W
+
+// Step response test state
+let stepTestActive = false;    // Whether step test is active
+let stepTestValue = 0;         // Additional solar from step test (500-1000W)
 
 // Metrics tracking
 let metricsData = {
@@ -383,9 +387,9 @@ function initializePID() {
   pid.setIntegralCorrectionMode(pid.IntegralCorrectionMode.CLAMP);
   pid.setProportionalMode(pid.ProportionalMode.ON_INPUT);
   pid.setDerivativeMode(pid.DerivativeMode.ON_ERROR);
-  pid.setKp(0.2);
+  pid.setKp(0.1);
   pid.setKi(0.4);
-  pid.setKd(0.02);
+  pid.setKd(0.1);
   pid.setSetpoint(0);
   
   // Sync UI controls with PID state
@@ -456,6 +460,15 @@ function resetSimulation() {
   random_load_high = 0;
   random_load_low = 0;
   
+  // Reset step test
+  stepTestValue = 0;
+  stepTestActive = false;
+  const statusEl = document.getElementById('stepStatus');
+  if (statusEl) {
+    statusEl.textContent = '';
+    statusEl.className = 'step-status';
+  }
+  
   // Clear all charts
   charts.forEach(chart => {
     chart.data.labels = [];
@@ -523,11 +536,14 @@ function simulationStep() {
   // Simulate some solar production variation, generally going up over time
   if (randomInt(0, 4) === 0) {
     random_solar += randomInt(-50, 75);
-    random_solar = constrain(random_solar, 0, 1000);
+    random_solar = constrain(random_solar, 0, 2000);
   }
 
+  // Add step test value to solar production (if active)
+  const total_solar = random_solar + stepTestValue;
+
   // Compute PID output
-  const output = pid.compute(grid - random_solar);
+  const output = pid.compute(grid - total_solar);
 
   // If output <= 0, we have no power to divert to the load
   // If we have, we simulate a load that can only consume between 0 and 2000W
@@ -557,7 +573,7 @@ function simulationStep() {
 
   // Update charts with data (order matches JSON payload: solar, grid, pTerm, iTerm, dTerm, output, load)
   const values = [
-    random_solar,
+    total_solar,  // Show total solar including step test
     pid.getInput(),
     pid.getPTerm(),
     pid.getITerm(),
@@ -570,6 +586,53 @@ function simulationStep() {
   
   // Update metrics
   updateMetrics(pid.getInput(), pid.getOutput(), pid.getSetpoint());
+}
+
+/**
+ * Apply step response test - add solar
+ */
+function applyStepUp() {
+  if (stepTestActive) {
+    alert('Step test already active. Remove it first before adding a new one.');
+    return;
+  }
+  
+  // Generate random step between 500-1000W
+  stepTestValue = randomInt(500, 1000);
+  stepTestActive = true;
+  
+  // Reset metrics to measure the step response
+  resetMetrics();
+  
+  // Update UI
+  const statusEl = document.getElementById('stepStatus');
+  statusEl.textContent = `+${stepTestValue}W applied`;
+  statusEl.className = 'step-status active';
+  
+  console.log(`Step test: Added ${stepTestValue}W to solar production`);
+}
+
+/**
+ * Remove step response test - remove solar
+ */
+function applyStepDown() {
+  if (!stepTestActive) {
+    alert('No step test active to remove.');
+    return;
+  }
+  
+  console.log(`Step test: Removing ${stepTestValue}W from solar production`);
+  
+  stepTestValue = 0;
+  stepTestActive = false;
+  
+  // Reset metrics to measure the step-down response
+  resetMetrics();
+  
+  // Update UI
+  const statusEl = document.getElementById('stepStatus');
+  statusEl.textContent = 'No step active';
+  statusEl.className = 'step-status';
 }
 
 /**
@@ -606,6 +669,10 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('resetBtn').addEventListener('click', resetSimulation);
   document.getElementById('pause').addEventListener('click', pauseSimulation);
   document.getElementById('resume').addEventListener('click', resumeSimulation);
+  
+  // Bind step test button events
+  document.getElementById('stepUp').addEventListener('click', applyStepUp);
+  document.getElementById('stepDown').addEventListener('click', applyStepDown);
 
   // Start simulation
   startSimulation();

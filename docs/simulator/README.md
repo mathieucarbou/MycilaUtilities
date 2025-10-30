@@ -48,9 +48,15 @@ Simply open `index.html` in a modern web browser. No build process or server req
    - **Proportional Mode**: ON_ERROR (traditional) or ON_INPUT (measurement-based)
    - **Derivative Mode**: ON_ERROR (traditional) or ON_INPUT (measurement-based)
 
-4. **Buttons**:
+4. **Step Response Test**:
+   - **+ Add Solar**: Applies a sudden solar production increase (500-1000W randomly) to test system response
+   - **- Remove Solar Step**: Removes the applied step to test the opposite effect
+   - Use these buttons to observe how quickly and smoothly the PID controller responds to sudden changes
+   - This is a classic control systems test to evaluate controller tuning quality
+
+5. **Buttons**:
    - **Apply Settings**: Apply parameter changes
-   - **Reset**: Reset the simulation and PID state
+   - **Reset**: Reset the simulation and PID state (also clears step tests)
    - **Pause/Resume**: Control simulation execution
 
 ### Chart Interaction
@@ -86,7 +92,7 @@ The simulator provides real-time metrics to evaluate PID controller performance:
 
 The simulator models a solar power diversion system where:
 
-- **Solar**: Random solar production (0-1000W) with gradual variations
+- **Solar**: Random solar production (0-2000W) with gradual variations
 - **Grid**: Grid power consumption/export
 - **Load**: Divertible load (0-2000W) controlled by PID output
 - **Random variations**: Simulates real-world noise and sudden load changes

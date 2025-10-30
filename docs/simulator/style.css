@@ -285,6 +285,48 @@ button:active:not(:disabled) {
   transform: translateY(0);
 }
 
+/* Step Response Test Section */
+.step-test-section {
+  background: #fff8e1;
+  padding: 16px;
+  border-radius: 6px;
+  border: 2px solid #ffd54f;
+  margin-top: 16px;
+}
+
+.step-test-desc {
+  color: var(--secondary-color);
+  font-size: 0.9em;
+  margin-bottom: 12px;
+}
+
+.btn-test {
+  background: #ffd54f;
+  color: #333;
+  border: 1px solid #ffc107;
+  font-weight: 600;
+}
+
+.btn-test:hover:not(:disabled) {
+  background: #ffc107;
+  transform: translateY(-1px);
+}
+
+.step-status {
+  display: inline-block;
+  padding: 8px 16px;
+  background: white;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: #333;
+}
+
+.step-status.active {
+  background: #4caf50;
+  color: white;
+}
+
 /* Footer */
 footer {
   margin-top: 32px;
