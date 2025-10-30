@@ -388,7 +388,7 @@ function initializePID() {
   pid.setProportionalMode(pid.ProportionalMode.ON_INPUT);
   pid.setDerivativeMode(pid.DerivativeMode.ON_ERROR);
   pid.setKp(0.1);
-  pid.setKi(0.4);
+  pid.setKi(0.3);
   pid.setKd(0.05);
   pid.setSetpoint(0);
   

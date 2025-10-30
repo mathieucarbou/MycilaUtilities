@@ -217,7 +217,7 @@ void setup() {
   pid.setProportionalMode(Mycila::PID::ProportionalMode::ON_INPUT);
   pid.setDerivativeMode(Mycila::PID::DerivativeMode::ON_ERROR);
   pid.setKp(0.1);
-  pid.setKi(0.4);
+  pid.setKi(0.3);
   pid.setKd(0.05);
 
   server.addHandler(&ws);
