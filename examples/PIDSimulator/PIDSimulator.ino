@@ -218,7 +218,7 @@ void setup() {
   pid.setDerivativeMode(Mycila::PID::DerivativeMode::ON_ERROR);
   pid.setKp(0.1);
   pid.setKi(0.4);
-  pid.setKd(0.1);
+  pid.setKd(0.05);
 
   server.addHandler(&ws);
 

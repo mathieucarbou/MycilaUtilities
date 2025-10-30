@@ -389,7 +389,7 @@ function initializePID() {
   pid.setDerivativeMode(pid.DerivativeMode.ON_ERROR);
   pid.setKp(0.1);
   pid.setKi(0.4);
-  pid.setKd(0.1);
+  pid.setKd(0.05);
   pid.setSetpoint(0);
   
   // Sync UI controls with PID state
