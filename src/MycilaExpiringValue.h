@@ -21,7 +21,7 @@ namespace Mycila {
       // update the value and returns the old value
       std::optional<T> update(T newVale) {
         if (_time) {
-          T old = _val;
+          T old = std::forward<T>(_val);
           _val = std::forward<T>(newVale);
           _time = millis();
           return old;
