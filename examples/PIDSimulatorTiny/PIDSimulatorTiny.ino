@@ -43,25 +43,21 @@ void setup() {
   }
 
   pids[0].setProportionalMode(Mycila::PID::ProportionalMode::ON_ERROR);
-  pids[0].setDerivativeMode(Mycila::PID::DerivativeMode::ON_ERROR);
   pids[0].setKp(0.2);
   pids[0].setKi(0.1);
   pids[0].setKd(0.05);
 
   pids[1].setProportionalMode(Mycila::PID::ProportionalMode::ON_INPUT);
-  pids[1].setDerivativeMode(Mycila::PID::DerivativeMode::ON_INPUT);
   pids[1].setKp(0.1);
   pids[1].setKi(0.2);
   pids[1].setKd(0.05);
 
   pids[2].setProportionalMode(Mycila::PID::ProportionalMode::ON_ERROR);
-  pids[2].setDerivativeMode(Mycila::PID::DerivativeMode::ON_INPUT);
   pids[2].setKp(0.2);
   pids[2].setKi(0.1);
   pids[2].setKd(0.05);
 
   pids[3].setProportionalMode(Mycila::PID::ProportionalMode::ON_INPUT);
-  pids[3].setDerivativeMode(Mycila::PID::DerivativeMode::ON_ERROR);
   pids[3].setKp(0.1);
   pids[3].setKi(0.2);
   pids[3].setKd(0.05);

@@ -56,7 +56,6 @@ String page = R"rawliteral(
     <label>Output Max<input id="outMax" type="number" step="1" value="3000"></label>
     <label>IC Mode<select id="icMode"><option value="clamp">clamp</option><option value="off">off</option></select></label>
     <label>P Mode<select id="pMode"><option value="error">error</option><option value="input">input</option></select></label>
-    <label>D Mode<select id="dMode"><option value="error">error</option><option value="input">input</option></select></label>
     
   <button id="apply">Apply</button>
   <button id="resetBtn">Reset</button>
@@ -148,7 +147,6 @@ String page = R"rawliteral(
             if (typeof msg.output_max !== 'undefined') document.getElementById('outMax').value = msg.output_max;
             if (typeof msg.icMode !== 'undefined') document.getElementById('icMode').value = msg.icMode;
             if (typeof msg.pMode !== 'undefined') document.getElementById('pMode').value = msg.pMode;
-            if (typeof msg.dMode !== 'undefined') document.getElementById('dMode').value = msg.dMode;
             // set reset field to setpoint by default
             if (typeof msg.setpoint !== 'undefined') document.getElementById('reset').value = msg.setpoint;
 
@@ -176,8 +174,7 @@ String page = R"rawliteral(
         output_min: parseFloat(document.getElementById('outMin').value),
         output_max: parseFloat(document.getElementById('outMax').value),
         icMode: document.getElementById('icMode').value,
-        pMode: document.getElementById('pMode').value,
-        dMode: document.getElementById('dMode').value
+        pMode: document.getElementById('pMode').value
       };
       ws.send(JSON.stringify(payload));
     };
@@ -215,7 +212,6 @@ void setup() {
   pid.setOutputLimits(-300, 4000);
   pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::CLAMP);
   pid.setProportionalMode(Mycila::PID::ProportionalMode::ON_INPUT);
-  pid.setDerivativeMode(Mycila::PID::DerivativeMode::ON_ERROR);
   pid.setKp(0.1);
   pid.setKi(0.3);
   pid.setKd(0.05);
@@ -286,10 +282,6 @@ void setup() {
         Serial.printf("Proportional mode updated to %s\n", pid.getProportionalMode() == Mycila::PID::ProportionalMode::ON_ERROR ? "error" : "input");
       }
 
-      if (!obj["dMode"].isNull()) {
-        pid.setDerivativeMode(obj["dMode"].as<String>() == "input" ? Mycila::PID::DerivativeMode::ON_INPUT : Mycila::PID::DerivativeMode::ON_ERROR);
-        Serial.printf("Derivative mode updated to %s\n", pid.getDerivativeMode() == Mycila::PID::DerivativeMode::ON_ERROR ? "error" : "input");
-      }
 
       if (!obj["icMode"].isNull()) {
         pid.setIntegralCorrectionMode(obj["icMode"].as<String>() == "off" ? Mycila::PID::IntegralCorrectionMode::OFF : Mycila::PID::IntegralCorrectionMode::CLAMP);
@@ -326,7 +318,6 @@ void setup() {
     obj["reverse"] = pid.isReverse();
     obj["timeSampling"] = pid.isTimeSampling();
     obj["pMode"] = pid.getProportionalMode() == Mycila::PID::ProportionalMode::ON_ERROR ? "error" : "input";
-    obj["dMode"] = pid.getDerivativeMode() == Mycila::PID::DerivativeMode::ON_ERROR ? "error" : "input";
     obj["icMode"] = pid.getIntegralCorrectionMode() == Mycila::PID::IntegralCorrectionMode::OFF ? "off" : "clamp";
     obj["output_min"] = pid.getOutputMin();
     obj["output_max"] = pid.getOutputMax();

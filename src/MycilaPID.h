@@ -34,20 +34,6 @@ namespace Mycila {
       };
 
       /**
-       * @brief Derivative control modes: determines how the derivative term is calculated.
-       */
-      enum class DerivativeMode {
-        /**
-         * @brief Derivative term computed from the error (default and traditional method)
-         */
-        ON_ERROR,
-        /**
-         * @brief Derivative term computed from the input
-         */
-        ON_INPUT,
-      };
-
-      /**
        * @brief Integral correction modes: determines how the integral term is clamped to prevent large overshoots (windup protection).
        */
       enum class IntegralCorrectionMode {
@@ -66,7 +52,6 @@ namespace Mycila {
 
     public:
       ProportionalMode getProportionalMode() const { return _pMode; }
-      DerivativeMode getDerivativeMode() const { return _dMode; }
       IntegralCorrectionMode getIntegralCorrectionMode() const { return _icMode; }
       bool isReverse() const { return _reverse; }
       bool isEnabled() const { return _enabled; }
@@ -94,7 +79,6 @@ namespace Mycila {
       uint32_t getLastTime() const { return _lastTime; }
 
       void setProportionalMode(ProportionalMode mode) { _pMode = mode; }
-      void setDerivativeMode(DerivativeMode mode) { _dMode = mode; }
       void setIntegralCorrectionMode(IntegralCorrectionMode mode) { _icMode = mode; }
 
       /**
@@ -186,7 +170,6 @@ namespace Mycila {
         _pTerm = 0;
         _dTerm = 0;
         _lastInput = NAN;
-        _lastError = NAN;
         _lastTime = 0;
         _feed = 0;
       }
@@ -231,12 +214,9 @@ namespace Mycila {
         float ki = _ki;
         float kd = _kd;
 
-        // input delta
-        const float dInput = isnan(_lastInput) ? 0 : input - _lastInput;
-
         // compute error and error delta
         const float error = _setpoint - input;
-        const float dError = isnan(_lastError) ? 0 : error - _lastError;
+        const float dError = isnan(_lastInput) ? 0 : _lastInput - input;
 
         // when in reverse mode, invert the gains
         if (_reverse) {
@@ -263,7 +243,7 @@ namespace Mycila {
             break;
           case ProportionalMode::ON_INPUT:
             // proportional on measurement, i.e. accumulate the proportional term based on input changes
-            _pTerm -= kp * dInput;
+            _pTerm += kp * dError;
             break;
           default:
             assert(false);
@@ -279,27 +259,13 @@ namespace Mycila {
         }
 
         // calculate derivative term
-        switch (_dMode) {
-          case DerivativeMode::ON_ERROR: {
-            _dTerm = kd * dError;
-            break;
-          }
-          case DerivativeMode::ON_INPUT: {
-            _dTerm = -kd * dInput;
-            break;
-          }
-          default: {
-            assert(false);
-            break;
-          }
-        }
+        _dTerm = kd * dError;
 
         // calculate output and clamp to output limits
         _lastOutput = _clamp(_pTerm + _iTerm + _dTerm + _feed);
 
         // remember some values for next time
         _lastInput = input;
-        _lastError = error;
         _lastTime = micros();
 
         return _lastOutput;
@@ -308,7 +274,6 @@ namespace Mycila {
 #ifdef MYCILA_JSON_SUPPORT
       void toJson(const JsonObject& root) const {
         root["pMode"] = _pMode == ProportionalMode::ON_ERROR ? "error" : "input";
-        root["dMode"] = _dMode == DerivativeMode::ON_ERROR ? "error" : "input";
         root["icMode"] = _icMode == IntegralCorrectionMode::OFF ? "off" : "clamp";
         root["reverse"] = _reverse;
         root["enabled"] = _enabled;
@@ -330,7 +295,6 @@ namespace Mycila {
 
     private:
       ProportionalMode _pMode = ProportionalMode::ON_ERROR;
-      DerivativeMode _dMode = DerivativeMode::ON_ERROR;
       IntegralCorrectionMode _icMode = IntegralCorrectionMode::CLAMP;
       bool _enabled = true;
       bool _reverse = false;
@@ -345,7 +309,6 @@ namespace Mycila {
 
       float _lastInput = NAN;
       float _lastOutput = NAN;
-      float _lastError = NAN;
 
       float _pTerm = 0;
       float _iTerm = 0;

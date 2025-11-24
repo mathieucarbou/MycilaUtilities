@@ -46,7 +46,6 @@ Header: `#include <MycilaPID.h>`
 - Modes
 
   - Proportional: `setProportionalMode(PID::ProportionalMode::{ON_ERROR|ON_INPUT})`
-  - Derivative: `setDerivativeMode(PID::DerivativeMode::{ON_ERROR|ON_INPUT})`
   - Integral correction: `setIntegralCorrectionMode(PID::IntegralCorrectionMode::{OFF|CLAMP})`
 
 - Direction and timing
@@ -69,7 +68,7 @@ Header: `#include <MycilaPID.h>`
     - `getPTerm()`, `getITerm()`, `getDTerm()`, `getFeedForward()`
     - `getKp()`, `getKi()`, `getKd()`
     - `getOutputMin()`, `getOutputMax()`
-    - `getProportionalMode()`, `getDerivativeMode()`, `getIntegralCorrectionMode()`
+    - `getProportionalMode()`, `getIntegralCorrectionMode()`
     - `isEnabled()`, `isReverse()`, `isTimeSampling()`
 
 - JSON export (optional)
@@ -150,7 +149,6 @@ void setup() {
   pid.setOutputLimits(-300.0f, 4000.0f);
   pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::CLAMP);
   pid.setProportionalMode(Mycila::PID::ProportionalMode::ON_INPUT);
-  pid.setDerivativeMode(Mycila::PID::DerivativeMode::ON_INPUT);
   pid.setTimeSampling(false);
   pid.setReverse(false);
 
