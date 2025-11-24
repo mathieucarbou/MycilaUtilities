@@ -245,7 +245,7 @@ namespace Mycila {
           kd = -kd;
         }
 
-        // time sampling
+        // time sampling: pre-adjust gains for efficiency (instead of multiplying/dividing in each calculation)
         if (_timeSampling && _lastTime) {
           // time difference in microseconds since last computation, converted to fraction of seconds
           const float dt = static_cast<float>(micros() - _lastTime) / 1000000.0f;
@@ -262,7 +262,7 @@ namespace Mycila {
             _pTerm = kp * error;
             break;
           case ProportionalMode::ON_INPUT:
-            // proportional on measurement, i.e. reduce the proportional term as the input approaches the setpoint
+            // proportional on measurement, i.e. accumulate the proportional term based on input changes
             _pTerm -= kp * dInput;
             break;
           default:
@@ -270,10 +270,10 @@ namespace Mycila {
             break;
         }
 
-        // calculate integral term and integrate over time in seconds
+        // calculate integral term and integrate over time
         _iTerm += ki * error;
 
-        // clamp integral if needed
+        // clamp integral if needed to prevent windup
         if (_icMode == IntegralCorrectionMode::CLAMP) {
           _iTerm = _clamp(_iTerm);
         }
