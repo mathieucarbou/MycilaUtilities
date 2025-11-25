@@ -73,6 +73,12 @@ namespace Mycila {
       float getFeedForward() const { return _feed; }
 
       /**
+       * @brief Get the filter coefficient (alpha) for the first-order lag filter.
+       * @return The filter coefficient (0 = heavy filtering, 1 = no filtering)
+       */
+      float getFilterAlpha() const { return _filterAlpha; }
+
+      /**
        * @brief Get the last time (in microseconds) when compute() was called.
        * @return The last time in microseconds, or 0 if compute() has never been called.
        */
@@ -119,6 +125,40 @@ namespace Mycila {
        * @param feedForward The feed-forward value to add to the PID output (default is 0).
        */
       void setFeedForward(float feedForward) { _feed = feedForward; }
+
+      /**
+       * @brief Set the filter coefficient (alpha) for first-order lag filtering of the input.
+       * @brief This implements a first-order lag filter (exponential smoothing) to reduce measurement noise.
+       * @brief Filtered_new = alpha * input + (1 - alpha) * Filtered_old
+       * @brief Unlike moving-average filters, this gives more weight to recent samples and exponentially decreases older samples.
+       * @param alpha Filter coefficient between 0 and 1 (default 1 = no filtering)
+       *              - 0.0 to 0.3: Heavy filtering (slow response, max noise reduction)
+       *              - 0.3 to 0.7: Moderate filtering (balanced)
+       *              - 0.7 to 1.0: Light filtering (fast response, minimal smoothing)
+       *              - 1.0: No filtering (raw input)
+       * @note For JSY measurements at 330ms intervals, try alpha = 0.3 to 0.5
+       */
+      void setFilterAlpha(float alpha) {
+        _filterAlpha = constrain(alpha, 0.0f, 1.0f);
+      }
+
+      /**
+       * @brief Set the filter time constant (tau) in seconds for the first-order lag filter.
+       * @brief The filter will reach ~63% of a step change in tau seconds.
+       * @brief This calculates alpha = sampleTime / (tau + sampleTime)
+       * @param tau Time constant in seconds (e.g., 1.0 = 1 second settling time)
+       * @param sampleTime Expected time between compute() calls in seconds (e.g., 0.33 for 330ms)
+       * @note Recommended: tau = 0.5 to 2.0 seconds for JSY at 330ms sample rate
+       * @note tau = 1.0s gives alpha ≈ 0.25 (heavy filtering)
+       * @note tau = 0.5s gives alpha ≈ 0.4 (moderate filtering)
+       */
+      void setFilterTimeConstant(float tau, float sampleTime) {
+        if (tau > 0 && sampleTime > 0) {
+          _filterAlpha = sampleTime / (tau + sampleTime);
+        } else {
+          _filterAlpha = 1.0f; // No filtering
+        }
+      }
 
       // Set all them together and reset
       void setTunings(float kp, float ki, float kd) {
@@ -210,6 +250,11 @@ namespace Mycila {
         if (!_enabled)
           return _lastOutput;
 
+        // Apply first-order lag filter (exponential smoothing) to input
+        if (!isnan(_lastInput)) {
+          input = _filterAlpha * input + (1.0f - _filterAlpha) * _lastInput;
+        }
+
         float kp = _kp;
         float ki = _ki;
         float kd = _kd;
@@ -276,6 +321,7 @@ namespace Mycila {
         root["pMode"] = _pMode == ProportionalMode::ON_ERROR ? "error" : "input";
         root["icMode"] = _icMode == IntegralCorrectionMode::OFF ? "off" : "clamp";
         root["reverse"] = _reverse;
+        root["time_sampling"] = _timeSampling;
         root["enabled"] = _enabled;
         root["setpoint"] = _setpoint;
         root["kp"] = _kp;
@@ -283,6 +329,7 @@ namespace Mycila {
         root["kd"] = _kd;
         root["output_min"] = _outputMin;
         root["output_max"] = _outputMax;
+        root["filter_alpha"] = _filterAlpha;
         root["pTerm"] = _pTerm;
         root["iTerm"] = _iTerm;
         root["dTerm"] = _dTerm;
@@ -315,6 +362,8 @@ namespace Mycila {
       float _dTerm = 0;
       float _feed = 0;
       uint32_t _lastTime = 0;
+
+      float _filterAlpha = 1.0f; // 1.0 = no filtering (default)
 
       inline float _clamp(float value) { return _outputMin == _outputMax ? value : constrain(value, _outputMin, _outputMax); }
   };
