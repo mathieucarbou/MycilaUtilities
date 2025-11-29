@@ -200,18 +200,24 @@ namespace Mycila {
        * @param initialOutput The initial output value to set (default is NAN).
        */
       void reset(float initialOutput = NAN) {
+        resetTerms();
         if (isnan(initialOutput)) {
           _lastOutput = NAN;
-          _iTerm = 0;
         } else {
           _lastOutput = _clamp(initialOutput);
           _iTerm = _lastOutput;
         }
-        _pTerm = 0;
-        _dTerm = 0;
-        _lastInput = NAN;
         _lastTime = 0;
         _feed = 0;
+      }
+
+      /**
+       * @brief Reset only the PID terms (P, I, D) without affecting the last input or output.
+       */
+      void resetTerms() {
+        _pTerm = 0;
+        _iTerm = 0;
+        _dTerm = 0;
       }
 
       /**
@@ -301,6 +307,14 @@ namespace Mycila {
         // clamp integral if needed to prevent windup
         if (_icMode == IntegralCorrectionMode::CLAMP) {
           _iTerm = _clamp(_iTerm);
+
+          // clamp proportional term to max output limit in both directions
+          if (_pMode == ProportionalMode::ON_INPUT) {
+            if (_pTerm > _outputMax)
+              _pTerm = _outputMax;
+            else if (_pTerm < -_outputMax)
+              _pTerm = -_outputMax;
+          }
         }
 
         // calculate derivative term
