@@ -66,6 +66,7 @@ namespace Mycila {
 
       float getInput() const { return _lastInput; }
       float getOutput() const { return _lastOutput; }
+      float getError() const { return _lastError; }
 
       float getPTerm() const { return _pTerm; }
       float getITerm() const { return _iTerm; }
@@ -79,10 +80,59 @@ namespace Mycila {
       float getFilterAlpha() const { return _filterAlpha; }
 
       /**
-       * @brief Get the last time (in microseconds) when compute() was called.
-       * @return The last time in microseconds, or 0 if compute() has never been called.
+       * @brief Get the PID start time (in milliseconds).
+       */
+      uint32_t getStartTime() const { return _startTime; }
+
+      /**
+       * @brief Get the last time (in milliseconds) when compute() was called.
+       * @return The last time in milliseconds, or 0 if compute() has never been called.
        */
       uint32_t getLastTime() const { return _lastTime; }
+
+      /**
+       * @brief Get the running time of the PID (in milliseconds).
+       */
+      uint32_t getElapsedTime() const { return _lastTime > _startTime ? _lastTime - _startTime : 0; }
+
+      /**
+       * @brief Get the Integral of Absolute Error (IAE)
+       * @brief Standard performance metric: lower is better
+       * @return Cumulative absolute error
+       */
+      float getIAE() const { return _iae; }
+      /**
+       * @brief Get the Integral of Squared Error (ISE)
+       * @brief Penalizes large errors more heavily: lower is better
+       * @return Cumulative squared error
+       */
+      float getISE() const { return _ise; }
+      /**
+       * @brief Get the Integral of Time-weighted Absolute Error (ITAE)
+       * @brief Penalizes persistent errors: lower is better
+       * @return Cumulative time-weighted absolute error
+       */
+      float getITAE() const { return _itae; }
+      /**
+       * @brief Get the average absolute error
+       * @brief Useful for understanding typical deviation
+       * @return Average absolute error
+       */
+      float getAverageAbsoluteError() const {
+        float elapsed = getElapsedTime() / 1000.0f;
+        return elapsed > 0 ? _iae / elapsed : NAN;
+      }
+      /**
+       * @brief Get the Root Mean Square Error (RMSE)
+       * @brief Standard deviation of error, useful for comparing tunings
+       * @return RMS error
+       */
+      float getRMSE() const {
+        float elapsed = getElapsedTime() / 1000.0f;
+        return elapsed > 0 ? sqrt(_ise / elapsed) : NAN;
+      }
+
+      // Setters
 
       void setProportionalMode(ProportionalMode mode) { _pMode = mode; }
       void setIntegralCorrectionMode(IntegralCorrectionMode mode) { _icMode = mode; }
@@ -201,13 +251,14 @@ namespace Mycila {
        */
       void reset(float initialOutput = NAN) {
         resetTerms();
+        resetMetrics();
+
         if (isnan(initialOutput)) {
           _lastOutput = NAN;
         } else {
           _lastOutput = _clamp(initialOutput);
           _iTerm = _lastOutput;
         }
-        _lastTime = 0;
         _feed = 0;
       }
 
@@ -218,6 +269,19 @@ namespace Mycila {
         _pTerm = 0;
         _iTerm = 0;
         _dTerm = 0;
+      }
+
+      /**
+       * @brief Reset all performance metrics
+       * @brief Call this when starting a new control session or after tuning changes
+       */
+      void resetMetrics() {
+        _startTime = 0;
+        _lastTime = 0;
+        _iae = 0;
+        _ise = 0;
+        _itae = 0;
+        _lastError = NAN;
       }
 
       /**
@@ -256,20 +320,30 @@ namespace Mycila {
         if (!_enabled)
           return _lastOutput;
 
-        const uint32_t now = micros();
+        const uint32_t now = millis();
+
+        // PID start
+        if (!_startTime) {
+          _startTime = now;
+        }
+
+        // compute time difference in seconds since last computation and eventually set a minimal dt
+        const float dt = _lastTime ? (now - _lastTime) / 1000.0f : 0.0f;
 
         // Apply first-order lag filter (exponential smoothing) to input
-        if (!isnan(_lastInput)) {
+        if (isnan(_lastInput)) {
+          _lastInput = input;
+        } else {
           input = _filterAlpha * input + (1.0f - _filterAlpha) * _lastInput;
         }
+
+        // compute error and delta
+        const float error = _setpoint - input;
+        const float dError = _lastInput - input;
 
         float kp = _kp;
         float ki = _ki;
         float kd = _kd;
-
-        // compute error and error delta
-        const float error = _setpoint - input;
-        const float dError = isnan(_lastInput) ? 0 : _lastInput - input;
 
         // when in reverse mode, invert the gains
         if (_reverse) {
@@ -279,13 +353,9 @@ namespace Mycila {
         }
 
         // time sampling: pre-adjust gains for efficiency (instead of multiplying/dividing in each calculation)
-        if (_timeSampling && _lastTime) {
-          // time difference in microseconds since last computation, converted to fraction of seconds
-          const float dt = static_cast<float>(now - _lastTime) / 1000000.0f;
-          if (dt > 0) {
-            ki = ki * dt;
-            kd = kd / dt;
-          }
+        if (_timeSampling && dt > 0) {
+          ki = ki * dt;
+          kd = kd / dt;
         }
 
         // calculate proportional term
@@ -325,8 +395,18 @@ namespace Mycila {
         // calculate output and clamp to output limits
         _lastOutput = _clamp(_pTerm + _iTerm + _dTerm + _feed);
 
-        // remember some values for next time
+        // calculate statistics
+        if (!isnan(_lastError)) {
+          const float avgAbsError = (abs(_lastError) + abs(error)) / 2.0f;
+          const float avgSqError = (_lastError * _lastError + error * error) / 2.0f;
+          _iae += avgAbsError * dt;
+          _ise += avgSqError * dt;
+          _itae += avgAbsError * dt * (now - _startTime) / 1000.0f;
+        }
+
+        // remember values for next time
         _lastInput = input;
+        _lastError = error;
         _lastTime = now;
 
         return _lastOutput;
@@ -334,25 +414,36 @@ namespace Mycila {
 
 #ifdef MYCILA_JSON_SUPPORT
       void toJson(const JsonObject& root) const {
-        root["pMode"] = _pMode == ProportionalMode::ON_ERROR ? "error" : "input";
-        root["icMode"] = _icMode == IntegralCorrectionMode::OFF ? "off" : "clamp";
-        root["reverse"] = _reverse;
-        root["time_sampling"] = _timeSampling;
-        root["enabled"] = _enabled;
-        root["setpoint"] = _setpoint;
-        root["kp"] = _kp;
-        root["ki"] = _ki;
-        root["kd"] = _kd;
-        root["output_min"] = _outputMin;
-        root["output_max"] = _outputMax;
-        root["filter_alpha"] = _filterAlpha;
-        root["pTerm"] = _pTerm;
-        root["iTerm"] = _iTerm;
-        root["dTerm"] = _dTerm;
-        root["feed"] = _feed;
-        root["last_input"] = _lastInput;
-        root["last_output"] = _lastOutput;
-        root["last_time"] = _lastTime;
+        JsonObject config = root["config"].to<JsonObject>();
+        config["enabled"] = _enabled;
+        config["pMode"] = _pMode == ProportionalMode::ON_ERROR ? "error" : "input";
+        config["icMode"] = _icMode == IntegralCorrectionMode::OFF ? "off" : "clamp";
+        config["reverse"] = _reverse;
+        config["time_sampling"] = _timeSampling;
+        config["setpoint"] = _setpoint;
+        config["kp"] = _kp;
+        config["ki"] = _ki;
+        config["kd"] = _kd;
+        config["filter_alpha"] = _filterAlpha;
+        config["output"]["min"] = _outputMin;
+        config["output"]["max"] = _outputMax;
+        JsonObject runtime = root["runtime"].to<JsonObject>();
+        runtime["start_time"] = _startTime;
+        runtime["last_time"] = _lastTime;
+        runtime["elapsed"] = getElapsedTime();
+        runtime["last_input"] = _lastInput;
+        runtime["last_output"] = _lastOutput;
+        runtime["last_error"] = _lastError;
+        runtime["pTerm"] = _pTerm;
+        runtime["iTerm"] = _iTerm;
+        runtime["dTerm"] = _dTerm;
+        runtime["feed"] = _feed;
+        JsonObject stats = root["stats"].to<JsonObject>();
+        stats["iae"] = _iae;
+        stats["ise"] = _ise;
+        stats["itae"] = _itae;
+        stats["rmse"] = getRMSE();
+        stats["avg_err"] = getAverageAbsoluteError();
       }
 #endif
 
@@ -369,17 +460,21 @@ namespace Mycila {
       float _kd = 0;
       float _outputMin = 0;
       float _outputMax = 0;
+      float _filterAlpha = 1.0f; // 1.0 = no filtering (default)
 
+      uint32_t _startTime = 0;
+      uint32_t _lastTime = 0;
       float _lastInput = NAN;
       float _lastOutput = NAN;
-
+      float _lastError = NAN;
       float _pTerm = 0;
       float _iTerm = 0;
       float _dTerm = 0;
       float _feed = 0;
-      uint32_t _lastTime = 0;
 
-      float _filterAlpha = 1.0f; // 1.0 = no filtering (default)
+      float _iae = 0;  // Integral of Absolute Error
+      float _ise = 0;  // Integral of Squared Error
+      float _itae = 0; // Integral of Time-weighted Absolute Error
 
       inline float _clamp(float value) { return _outputMin == _outputMax ? value : constrain(value, _outputMin, _outputMax); }
   };
