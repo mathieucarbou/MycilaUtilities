@@ -256,6 +256,8 @@ namespace Mycila {
         if (!_enabled)
           return _lastOutput;
 
+        const uint32_t now = micros();
+
         // Apply first-order lag filter (exponential smoothing) to input
         if (!isnan(_lastInput)) {
           input = _filterAlpha * input + (1.0f - _filterAlpha) * _lastInput;
@@ -279,7 +281,7 @@ namespace Mycila {
         // time sampling: pre-adjust gains for efficiency (instead of multiplying/dividing in each calculation)
         if (_timeSampling && _lastTime) {
           // time difference in microseconds since last computation, converted to fraction of seconds
-          const float dt = static_cast<float>(micros() - _lastTime) / 1000000.0f;
+          const float dt = static_cast<float>(now - _lastTime) / 1000000.0f;
           if (dt > 0) {
             ki = ki * dt;
             kd = kd / dt;
@@ -325,7 +327,7 @@ namespace Mycila {
 
         // remember some values for next time
         _lastInput = input;
-        _lastTime = micros();
+        _lastTime = now;
 
         return _lastOutput;
       }
