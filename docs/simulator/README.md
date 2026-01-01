@@ -128,5 +128,5 @@ Tested on:
 
 ## License
 
-Copyright (C) 2023-2025 Mathieu Carbou  
+Copyright (C) Mathieu Carbou  
 Licensed under MIT License

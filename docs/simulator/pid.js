@@ -1,7 +1,7 @@
 /**
  * MycilaPID - JavaScript implementation
  * Based on the C++ implementation from MycilaUtilities
- * Copyright (C) 2023-2025 Mathieu Carbou
+ * Copyright (C) Mathieu Carbou
  */
 
 class PID {
