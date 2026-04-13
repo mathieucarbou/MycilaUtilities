@@ -8,7 +8,6 @@
 
 [![Build](https://github.com/mathieucarbou/MycilaUtilities/actions/workflows/ci.yml/badge.svg)](https://github.com/mathieucarbou/MycilaUtilities/actions/workflows/ci.yml)
 [![GitHub latest commit](https://badgen.net/github/last-commit/mathieucarbou/MycilaUtilities)](https://GitHub.com/mathieucarbou/MycilaUtilities/commit/)
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/mathieucarbou/MycilaUtilities)
 
 Utility helpers for Arduino / ESP32: PID controller, timing helpers, circular buffer, etc.
 
