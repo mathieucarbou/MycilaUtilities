@@ -72,6 +72,25 @@
         <label>Feed-Forward (W)<input id="feedForward" type="number" step="1" value="0"></label>
       </div>
 
+      <h3>Input Filtering</h3>
+      <div class="controls">
+        <label>Filter Mode
+          <select id="filterMode">
+            <option value="alpha">By Alpha</option>
+            <option value="tau">By Time Constant</option>
+          </select>
+        </label>
+        <label>Filter Alpha (0..1)
+          <input id="filterAlpha" type="number" step="0.01" min="0" max="1" value="1.0">
+        </label>
+        <label>Filter Tau (s)
+          <input id="filterTau" type="number" step="0.01" min="0" value="1.0">
+        </label>
+        <label>Sample Time (s)
+          <input id="filterSampleTime" type="number" step="0.01" min="0.01" value="0.33">
+        </label>
+      </div>
+
       <h3>Controller Settings</h3>
       <div class="controls">
         <label>

@@ -24,17 +24,19 @@ class PID {
     this._kp = 0;
     this._ki = 0;
     this._kd = 0;
-    this._outputMin = 0;
-    this._outputMax = 0;
+    this._outputMin = NaN;
+    this._outputMax = NaN;
+    this._filterAlpha = 1.0;
 
     // State
     this._lastInput = NaN;
     this._lastOutput = NaN;
     this._lastError = NaN;
-    this._pTerm = 0;
-    this._iTerm = 0;
-    this._dTerm = 0;
+    this._pTerm = NaN;
+    this._iTerm = NaN;
+    this._dTerm = NaN;
     this._feed = 0;
+    this._startTime = 0;
     this._lastTime = 0;
   }
 
@@ -57,6 +59,8 @@ class PID {
   getITerm() { return this._iTerm; }
   getDTerm() { return this._dTerm; }
   getFeedForward() { return this._feed; }
+  getFilterAlpha() { return this._filterAlpha; }
+  getStartTime() { return this._startTime; }
   getLastTime() { return this._lastTime; }
 
   // Setters
@@ -70,6 +74,15 @@ class PID {
   setKi(ki) { this._ki = ki; }
   setKd(kd) { this._kd = kd; }
   setFeedForward(feedForward) { this._feed = feedForward; }
+  setFilterAlpha(alpha) { this._filterAlpha = this._clamp(alpha, 0.0, 1.0); }
+
+  setFilterTimeConstant(tau, sampleTime) {
+    if (tau > 0 && sampleTime > 0) {
+      this._filterAlpha = sampleTime / (tau + sampleTime);
+    } else {
+      this._filterAlpha = 1.0;
+    }
+  }
 
   setTunings(kp, ki, kd) {
     this._kp = kp;
@@ -78,35 +91,35 @@ class PID {
   }
 
   setOutputLimits(min, max) {
-    if (min >= max) {
-      this.unsetOutputLimits();
-      return;
-    }
     this._outputMin = min;
     this._outputMax = max;
-    this._iTerm = this._clamp(this._iTerm);
     this._lastOutput = this._clamp(this._lastOutput);
+    this._iTerm = this._clamp(this._lastOutput - this._pTerm - this._dTerm - this._feed);
   }
 
   unsetOutputLimits() {
-    this._outputMin = 0;
-    this._outputMax = 0;
+    this.setOutputLimits(NaN, NaN);
   }
 
   reset(initialOutput = NaN) {
+    this.resetTerms();
+    this._startTime = 0;
+    this._lastTime = 0;
+    this._lastError = NaN;
+
     if (isNaN(initialOutput)) {
       this._lastOutput = NaN;
-      this._iTerm = 0;
     } else {
       this._lastOutput = this._clamp(initialOutput);
       this._iTerm = this._lastOutput;
     }
-    this._pTerm = 0;
-    this._dTerm = 0;
-    this._lastInput = NaN;
-    this._lastError = NaN;
-    this._lastTime = 0;
     this._feed = 0;
+  }
+
+  resetTerms() {
+    this._pTerm = NaN;
+    this._iTerm = NaN;
+    this._dTerm = NaN;
   }
 
   pause() {
@@ -127,16 +140,27 @@ class PID {
       return this._lastOutput;
     }
 
+    const now = performance.now();
+
+    if (!this._startTime) {
+      this._startTime = now;
+    }
+
+    const dt = this._lastTime ? (now - this._lastTime) / 1000.0 : 0.0;
+
+    if (isNaN(this._lastInput)) {
+      this._lastInput = input;
+    } else {
+      input = this._filterAlpha * input + (1.0 - this._filterAlpha) * this._lastInput;
+    }
+
     let kp = this._kp;
     let ki = this._ki;
     let kd = this._kd;
 
-    // Input delta
-    const dInput = isNaN(this._lastInput) ? 0 : input - this._lastInput;
-
-    // Compute error and error delta
     const error = this._setpoint - input;
     const dError = isNaN(this._lastError) ? 0 : error - this._lastError;
+    const dInput = input - this._lastInput;
 
     // When in reverse mode, invert the gains
     if (this._reverse) {
@@ -146,14 +170,9 @@ class PID {
     }
 
     // Time sampling
-    if (this._timeSampling && this._lastTime) {
-      // Time difference in milliseconds since last computation, converted to fraction of seconds
-      const now = performance.now();
-      const dt = (now - this._lastTime) / 1000.0;
-      if (dt > 0) {
-        ki = ki * dt;
-        kd = kd / dt;
-      }
+    if (this._timeSampling && dt > 0) {
+      ki = ki * dt;
+      kd = kd / dt;
     }
 
     // Calculate proportional term
@@ -163,18 +182,11 @@ class PID {
         this._pTerm = kp * error;
         break;
       case this.ProportionalMode.ON_INPUT:
-        // Proportional on measurement
-        this._pTerm -= kp * dInput;
+        this._pTerm = this._zeroNan(this._pTerm) + kp * dInput;
         break;
     }
 
-    // Calculate integral term
-    this._iTerm += ki * error;
-
-    // Clamp integral if needed
-    if (this._icMode === this.IntegralCorrectionMode.CLAMP) {
-      this._iTerm = this._clamp(this._iTerm);
-    }
+    this._iTerm = this._zeroNan(this._iTerm) + ki * error;
 
     // Calculate derivative term
     switch (this._dMode) {
@@ -189,19 +201,33 @@ class PID {
     // Calculate output and clamp to output limits
     this._lastOutput = this._clamp(this._pTerm + this._iTerm + this._dTerm + this._feed);
 
+    if (this._icMode === this.IntegralCorrectionMode.CLAMP) {
+      this._iTerm = this._lastOutput - this._pTerm - this._dTerm;
+    }
+
     // Remember values for next time
     this._lastInput = input;
     this._lastError = error;
-    this._lastTime = performance.now();
+    this._lastTime = now;
 
     return this._lastOutput;
   }
 
-  _clamp(value) {
-    if (this._outputMin === this._outputMax) {
+  _clamp(value, min = this._outputMin, max = this._outputMax) {
+    if (Number.isNaN(value) || (Number.isNaN(min) && Number.isNaN(max))) {
       return value;
     }
-    return Math.max(this._outputMin, Math.min(this._outputMax, value));
+    if (!Number.isNaN(min) && value < min) {
+      return min;
+    }
+    if (!Number.isNaN(max) && value > max) {
+      return max;
+    }
+    return value;
+  }
+
+  _zeroNan(value) {
+    return Number.isNaN(value) ? 0 : value;
   }
 
   toJSON() {
@@ -216,8 +242,10 @@ class PID {
       kp: this._kp,
       ki: this._ki,
       kd: this._kd,
+      filter_alpha: this._filterAlpha,
       output_min: this._outputMin,
       output_max: this._outputMax,
+      start_time: this._startTime,
       pTerm: this._pTerm,
       iTerm: this._iTerm,
       dTerm: this._dTerm,
