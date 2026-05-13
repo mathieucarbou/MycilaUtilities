@@ -16,6 +16,7 @@ namespace Mycila {
    * @brief - https://github.com/Dlloydev/QuickPID
    * @brief - https://github.com/br3ttb/Arduino-PID-Library
    * @brief - https://github.com/m-lundberg/simple-pid
+   * @brief - https://github.com/bvweerd/simple_pid_controller
    */
   class PID {
     public:
@@ -220,14 +221,10 @@ namespace Mycila {
       /**
        * @brief Set the output limits for the PID controller to clamp the output value
        * and to prevent integral windup if integral correction mode is CLAMP.
-       * @param min Minimum output value
-       * @param max Maximum output value
+       * @param min Minimum output value (can be NAN for no limit)
+       * @param max Maximum output value (can be NAN for no limit)
        */
       void setOutputLimits(float min, float max) {
-        if (min >= max) {
-          unsetOutputLimits();
-          return;
-        }
         _outputMin = min;
         _outputMax = max;
         _iTerm = _clamp(_iTerm);
@@ -238,10 +235,7 @@ namespace Mycila {
        * @brief Unset output limits, allowing the PID output to take any value.
        * @note This will disable integral windup protection even if integral correction mode is CLAMP.
        */
-      void unsetOutputLimits() {
-        _outputMin = 0;
-        _outputMax = 0;
-      }
+      void unsetOutputLimits() { setOutputLimits(NAN, NAN); }
 
       /**
        * @brief Reset the PID controller state, including the last input, last error, and integral sum.
@@ -382,10 +376,7 @@ namespace Mycila {
 
           // clamp proportional term to max output limit in both directions
           if (_pMode == ProportionalMode::ON_INPUT) {
-            if (_pTerm > _outputMax)
-              _pTerm = _outputMax;
-            else if (_pTerm < -_outputMax)
-              _pTerm = -_outputMax;
+            _pTerm = _clamp(_pTerm, -_outputMax, _outputMax);
           }
         }
 
@@ -458,8 +449,8 @@ namespace Mycila {
       float _kp = 0;
       float _ki = 0;
       float _kd = 0;
-      float _outputMin = 0;
-      float _outputMax = 0;
+      float _outputMin = NAN;
+      float _outputMax = NAN;
       float _filterAlpha = 1.0f; // 1.0 = no filtering (default)
 
       uint32_t _startTime = 0;
@@ -476,7 +467,20 @@ namespace Mycila {
       float _ise = 0;  // Integral of Squared Error
       float _itae = 0; // Integral of Time-weighted Absolute Error
 
-      inline float _clamp(float value) { return _outputMin == _outputMax ? value : constrain(value, _outputMin, _outputMax); }
+      inline float _clamp(float value) { return _clamp(value, _outputMin, _outputMax); }
+
+      inline static float _clamp(float value, float min, float max) {
+        if (std::isnan(value) || (std::isnan(min) && std::isnan(max))) {
+          return value;
+        }
+        if (!std::isnan(min) && value < min) {
+          return min;
+        }
+        if (!std::isnan(max) && value > max) {
+          return max;
+        }
+        return value;
+      }
   };
 
 } // namespace Mycila
