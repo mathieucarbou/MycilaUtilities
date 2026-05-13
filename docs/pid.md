@@ -144,7 +144,7 @@ Mycila::PID pid;
 void setup() {
   pid.setSetpoint(0.0f);
   pid.setTunings(0.1f, 0.2f, 0.05f);
-  pid.setOutputLimits(-300.0f, 4000.0f);
+  pid.setOutputLimits(-800.0f, 4000.0f);
   pid.setIntegralCorrectionMode(Mycila::PID::IntegralCorrectionMode::CLAMP);
   pid.setProportionalMode(Mycila::PID::ProportionalMode::ON_INPUT);
   pid.setTimeSampling(false);

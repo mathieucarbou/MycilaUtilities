@@ -19,7 +19,7 @@ let isPaused = false;
 // Simulation state
 let grid = 0;              // grid power in watts
 let load = 0;              // load where to divert excess power watts
-let random_load_high = 0;  // random high load up to 1000W
+let random_load_high = 0;  // random high load up to 6000W
 let random_load_low = 0;   // random low load between -20W and +20W
 let random_solar = 0;      // random solar power generation between 0W and 2000W
 
@@ -382,14 +382,14 @@ function updateCharts(values) {
 function initializePID() {
   pid.setReverse(false);
   pid.setTimeSampling(false);
-  pid.setOutputLimits(-300, 4000);
+  pid.setOutputLimits(-800, 4000);
   pid.setIntegralCorrectionMode(pid.IntegralCorrectionMode.CLAMP);
   pid.setProportionalMode(pid.ProportionalMode.ON_INPUT);
   pid.setDerivativeMode(pid.DerivativeMode.ON_ERROR);
   pid.setFilterAlpha(1.0);
   pid.setKp(0.1);
   pid.setKi(0.3);
-  pid.setKd(0.05);
+  pid.setKd(0);
   pid.setSetpoint(0);
   
   // Sync UI controls with PID state
@@ -405,10 +405,7 @@ function syncUIWithPID() {
   document.getElementById('kd').value = pid.getKd();
   document.getElementById('setpoint').value = pid.getSetpoint();
   document.getElementById('feedForward').value = pid.getFeedForward();
-  document.getElementById('filterAlpha').value = pid.getFilterAlpha();
-  document.getElementById('filterMode').value = 'alpha';
-  document.getElementById('filterTau').value = 1.0;
-  document.getElementById('filterSampleTime').value = (SEND_INTERVAL / 1000).toFixed(2);
+  document.getElementById('filterPercent').value = ((1.0 - pid.getFilterAlpha()) * 100).toFixed(0);
   document.getElementById('reverse').checked = pid.isReverse();
   document.getElementById('timeSampling').checked = pid.isTimeSampling();
   document.getElementById('outMin').value = pid.getOutputMin();
@@ -416,22 +413,6 @@ function syncUIWithPID() {
   document.getElementById('icMode').value = pid.getIntegralCorrectionMode();
   document.getElementById('pMode').value = pid.getProportionalMode();
   document.getElementById('dMode').value = pid.getDerivativeMode();
-  updateFilteringControls();
-}
-
-/**
- * Enable/disable filtering fields based on selected filtering mode
- */
-function updateFilteringControls() {
-  const mode = document.getElementById('filterMode').value;
-  const alphaInput = document.getElementById('filterAlpha');
-  const tauInput = document.getElementById('filterTau');
-  const sampleInput = document.getElementById('filterSampleTime');
-
-  const isAlphaMode = mode === 'alpha';
-  alphaInput.disabled = !isAlphaMode;
-  tauInput.disabled = isAlphaMode;
-  sampleInput.disabled = isAlphaMode;
 }
 
 /**
@@ -443,10 +424,7 @@ function applyParameters() {
   const kd = parseFloat(document.getElementById('kd').value);
   const setpoint = parseFloat(document.getElementById('setpoint').value);
   const feedForward = parseFloat(document.getElementById('feedForward').value);
-  const filterMode = document.getElementById('filterMode').value;
-  const filterAlpha = parseFloat(document.getElementById('filterAlpha').value);
-  const filterTau = parseFloat(document.getElementById('filterTau').value);
-  const filterSampleTime = parseFloat(document.getElementById('filterSampleTime').value);
+  const filterPercent = parseFloat(document.getElementById('filterPercent').value);
   const reverse = document.getElementById('reverse').checked;
   const timeSampling = document.getElementById('timeSampling').checked;
   const outMin = parseFloat(document.getElementById('outMin').value);
@@ -460,18 +438,14 @@ function applyParameters() {
   pid.setKd(kd);
   pid.setSetpoint(setpoint);
   pid.setFeedForward(feedForward);
-  if (filterMode === 'tau') {
-    pid.setFilterTimeConstant(filterTau, filterSampleTime);
-  } else {
-    pid.setFilterAlpha(filterAlpha);
-  }
+  pid.setFilterAlpha(1.0 - constrain(filterPercent, 0, 100) / 100.0);
   pid.setReverse(reverse);
   pid.setTimeSampling(timeSampling);
   pid.setOutputLimits(outMin, outMax);
   pid.setIntegralCorrectionMode(icMode);
   pid.setProportionalMode(pMode);
   pid.setDerivativeMode(dMode);
-  document.getElementById('filterAlpha').value = pid.getFilterAlpha().toFixed(3);
+  document.getElementById('filterPercent').value = ((1.0 - pid.getFilterAlpha()) * 100).toFixed(0);
 
   // Reset metrics when parameters change to get fresh measurements
   resetMetrics();
@@ -552,13 +526,13 @@ function simulationStep() {
     }
   }
 
-  // Generate a random high load between 0W and 1000W
+  // Generate a random high load between 0W and 6000W
   if (randomInt(0, 49) === 0) {
     if (random_load_high) {
       delta -= random_load_high;
       random_load_high = 0;
     } else {
-      random_load_high = randomInt(0, 1000);
+      random_load_high = randomInt(0, 6000);
       delta += random_load_high;
     }
   }
@@ -576,8 +550,8 @@ function simulationStep() {
   const output = pid.compute(grid - total_solar);
 
   // If output <= 0, we have no power to divert to the load
-  // If we have, we simulate a load that can only consume between 0 and 2000W
-  const to_divert = output <= 0 ? 0 : Math.min(output, 2000);
+  // If we have, we simulate a load that can only consume between 0 and 6000W
+  const to_divert = output <= 0 ? 0 : Math.min(output, 6000);
 
   // Accumulate the load in the grid, considering its previous existing consumption
   grid -= load;
@@ -627,8 +601,8 @@ function applyStepUp() {
     return;
   }
   
-  // Generate random step between 500-1000W
-  stepTestValue = randomInt(500, 1000);
+  // Generate random step between 500-2000W
+  stepTestValue = randomInt(500, 2000);
   stepTestActive = true;
   
   // Reset metrics to measure the step response
@@ -699,7 +673,6 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('resetBtn').addEventListener('click', resetSimulation);
   document.getElementById('pause').addEventListener('click', pauseSimulation);
   document.getElementById('resume').addEventListener('click', resumeSimulation);
-  document.getElementById('filterMode').addEventListener('change', updateFilteringControls);
   
   // Bind step test button events
   document.getElementById('stepUp').addEventListener('click', applyStepUp);
