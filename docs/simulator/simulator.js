@@ -1,6 +1,5 @@
 /**
  * PID Simulator - Solar Power Diversion Simulator
- * Based on the ESP32 implementation from MycilaUtilities/examples/PIDSimulator
  */
 
 // Configuration

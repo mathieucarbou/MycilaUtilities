@@ -30,8 +30,6 @@ This document describes the `Mycila::PID` controller provided by MycilaUtilities
 - Introspection getters for last input/output and P/I/D terms
 - Optional JSON serialization (enable by defining `MYCILA_JSON_SUPPORT` before including the header)
 
-**PID Simulator** available in `examples/PIDSimulator` ([video link](https://youtu.be/aSKE0_tJjhw))
-
 ## Key API
 
 Header: `#include <MycilaPID.h>`
@@ -202,35 +200,5 @@ MIT (see project LICENSE)
 ---
 
 ## PIDSimulator example — Solar diversion demo
-
-The `PIDSimulator` example (`examples/PIDSimulator/PIDSimulator.ino`) showcases `Mycila::PID` in a simulated solar-diversion scenario.
-
-What it simulates
-
-- Solar production (`solar`) fluctuating over time
-- Grid value (`grid`) used as the PID input
-- PID internal terms: `pTerm`, `iTerm`, `dTerm`
-- Controller `output` and a simulated `load` (diverted power)
-
-Web UI and controls
-
-- The sketch starts an ESP32 access point named `esp-captive`
-- Browse to http://192.168.4.1/ to open the single-page UI
-- Live charts update via WebSocket with the following series: Solar, Grid (PID input), pTerm, iTerm, dTerm, Output, Load
-- Controls available: Kp, Ki, Kd, Setpoint, Reverse, TimeSampling, Output limits, P/D/IC modes, Pause/Resume/Reset
-- You can click a chart title to show/hide that chart
-
-How to run
-
-1. Build and flash `examples/PIDSimulator/PIDSimulator.ino` to an ESP32
-2. Connect to the `esp-captive` Wi‑Fi access point
-3. Open http://192.168.4.1/
-4. Tune parameters and observe how Solar/Grid/Output/Load evolve in real time
-
-Tip: Start with conservative gains (e.g., small Ki/Kd) and enable output limits with `CLAMP` integral correction to reduce overshoot.
-
-| [![](https://mathieu.carbou.me/MycilaUtilities/assets/pid-graph.jpeg)](https://mathieu.carbou.me/MycilaUtilities/assets/pid-graph.jpeg) | [![](https://mathieu.carbou.me/MycilaUtilities/assets/pid-console.jpeg)](https://mathieu.carbou.me/MycilaUtilities/assets/pid-console.jpeg) |
-
-**Web version**
 
 An online version is available now at **[https://mathieu.carbou.me/MycilaUtilities/simulator/](https://mathieu.carbou.me/MycilaUtilities/simulator/)**

@@ -124,7 +124,6 @@ Tested on:
 ## Learn More
 
 - [MycilaPID Documentation](../pid.md) - Detailed PID controller documentation
-- [ESP32 Implementation](../../examples/PIDSimulator/PIDSimulator.ino) - Original C++ version
 
 ## License
 
