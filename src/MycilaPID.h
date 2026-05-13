@@ -51,9 +51,27 @@ namespace Mycila {
         CLAMP,
       };
 
+      /**
+       * @brief Derivative control modes: determines how the derivative term is calculated.
+       * @brief Note: if setpoint never changes, then dInput = -dError, so derivative on input is effectively the same as derivative on error but with inverted sign.
+       * @brief However, if the setpoint changes, then dInput and dError will differ, allowing for different tuning of the derivative term.
+       */
+      enum class DerivativeMode {
+        /**
+         * @brief Derivative term computed from the error (default and traditional method)
+         */
+        ON_ERROR,
+        /**
+         * @brief Derivative term computed from the input
+         */
+        ON_INPUT,
+      };
+
     public:
       ProportionalMode getProportionalMode() const { return _pMode; }
       IntegralCorrectionMode getIntegralCorrectionMode() const { return _icMode; }
+      DerivativeMode getDerivativeMode() const { return _dMode; }
+
       bool isReverse() const { return _reverse; }
       bool isEnabled() const { return _enabled; }
       bool isTimeSampling() const { return _timeSampling; }
@@ -137,6 +155,7 @@ namespace Mycila {
 
       void setProportionalMode(ProportionalMode mode) { _pMode = mode; }
       void setIntegralCorrectionMode(IntegralCorrectionMode mode) { _icMode = mode; }
+      void setDerivativeMode(DerivativeMode mode) { _dMode = mode; }
 
       /**
        * @brief Set the controller direction.
@@ -227,8 +246,8 @@ namespace Mycila {
       void setOutputLimits(float min, float max) {
         _outputMin = min;
         _outputMax = max;
-        _iTerm = _clamp(_iTerm);
         _lastOutput = _clamp(_lastOutput);
+        _iTerm = _clamp(_lastOutput - _pTerm - _dTerm - _feed);
       }
 
       /**
@@ -247,7 +266,7 @@ namespace Mycila {
         resetTerms();
         resetMetrics();
 
-        if (isnan(initialOutput)) {
+        if (std::isnan(initialOutput)) {
           _lastOutput = NAN;
         } else {
           _lastOutput = _clamp(initialOutput);
@@ -260,9 +279,9 @@ namespace Mycila {
        * @brief Reset only the PID terms (P, I, D) without affecting the last input or output.
        */
       void resetTerms() {
-        _pTerm = 0;
-        _iTerm = 0;
-        _dTerm = 0;
+        _pTerm = NAN;
+        _iTerm = NAN;
+        _dTerm = NAN;
       }
 
       /**
@@ -325,7 +344,7 @@ namespace Mycila {
         const float dt = _lastTime ? (now - _lastTime) / 1000.0f : 0.0f;
 
         // Apply first-order lag filter (exponential smoothing) to input
-        if (isnan(_lastInput)) {
+        if (std::isnan(_lastInput)) {
           _lastInput = input;
         } else {
           input = _filterAlpha * input + (1.0f - _filterAlpha) * _lastInput;
@@ -333,7 +352,8 @@ namespace Mycila {
 
         // compute error and delta
         const float error = _setpoint - input;
-        const float dError = _lastInput - input;
+        const float dError = std::isnan(_lastError) ? 0 : error - _lastError;
+        const float dInput = input - _lastInput; // Note: if setpoint never changes, dInput = -dError
 
         float kp = _kp;
         float ki = _ki;
@@ -360,9 +380,7 @@ namespace Mycila {
             break;
           case ProportionalMode::ON_INPUT:
             // proportional on measurement, i.e. accumulate the proportional term based on input changes
-            _pTerm = _icMode == IntegralCorrectionMode::CLAMP
-                       ? _clamp(_pTerm + kp * dError, -_outputMax, _outputMax)
-                       : _pTerm + kp * dError;
+            _pTerm = _zeroNan(_pTerm) + kp * dInput;
             break;
           default:
             assert(false);
@@ -370,18 +388,33 @@ namespace Mycila {
         }
 
         // calculate integral term and integrate over time
-        _iTerm = _icMode == IntegralCorrectionMode::CLAMP
-                   ? _clamp(_iTerm + ki * error)
-                   : _iTerm + ki * error;
+        _iTerm = _zeroNan(_iTerm) + ki * error;
 
         // calculate derivative term
-        _dTerm = kd * dError;
+        switch (_dMode) {
+          case DerivativeMode::ON_ERROR:
+            // traditional method: derivative term is based on error changes
+            _dTerm = kd * dError;
+            break;
+          case DerivativeMode::ON_INPUT:
+            // derivative on measurement, i.e. derivative term is based on input changes
+            _dTerm = -kd * dInput; // Note: if setpoint never changes, this is effectively the same as derivative on error but with inverted sign
+            break;
+          default:
+            assert(false);
+            break;
+        }
 
         // calculate output and clamp to output limits
         _lastOutput = _clamp(_pTerm + _iTerm + _dTerm + _feed);
 
+        if (_icMode == IntegralCorrectionMode::CLAMP) {
+          // prevent integral windup by clamping the integral term within the output limits
+          _iTerm = _lastOutput - _pTerm - _dTerm;
+        }
+
         // calculate statistics
-        if (!isnan(_lastError)) {
+        if (!std::isnan(_lastError)) {
           const float avgAbsError = (abs(_lastError) + abs(error)) / 2.0f;
           const float avgSqError = (_lastError * _lastError + error * error) / 2.0f;
           _iae += avgAbsError * dt;
@@ -403,6 +436,7 @@ namespace Mycila {
         config["enabled"] = _enabled;
         config["pMode"] = _pMode == ProportionalMode::ON_ERROR ? "error" : "input";
         config["icMode"] = _icMode == IntegralCorrectionMode::OFF ? "off" : "clamp";
+        config["dMode"] = _dMode == DerivativeMode::ON_ERROR ? "error" : "input";
         config["reverse"] = _reverse;
         config["time_sampling"] = _timeSampling;
         config["setpoint"] = _setpoint;
@@ -435,6 +469,8 @@ namespace Mycila {
     private:
       ProportionalMode _pMode = ProportionalMode::ON_ERROR;
       IntegralCorrectionMode _icMode = IntegralCorrectionMode::CLAMP;
+      DerivativeMode _dMode = DerivativeMode::ON_ERROR;
+
       bool _enabled = true;
       bool _reverse = false;
       bool _timeSampling = false;
@@ -452,9 +488,9 @@ namespace Mycila {
       float _lastInput = NAN;
       float _lastOutput = NAN;
       float _lastError = NAN;
-      float _pTerm = 0;
-      float _iTerm = 0;
-      float _dTerm = 0;
+      float _pTerm = NAN;
+      float _iTerm = NAN;
+      float _dTerm = NAN;
       float _feed = 0;
 
       float _iae = 0;  // Integral of Absolute Error
@@ -463,7 +499,7 @@ namespace Mycila {
 
       inline float _clamp(float value) { return _clamp(value, _outputMin, _outputMax); }
 
-      inline static float _clamp(float value, float min, float max) {
+      inline static constexpr float _clamp(float value, float min, float max) {
         if (std::isnan(value) || (std::isnan(min) && std::isnan(max))) {
           return value;
         }
@@ -475,6 +511,8 @@ namespace Mycila {
         }
         return value;
       }
+
+      inline static constexpr float _zeroNan(float value) { return std::isnan(value) ? 0 : value; }
   };
 
 } // namespace Mycila
