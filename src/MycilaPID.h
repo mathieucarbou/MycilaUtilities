@@ -360,7 +360,9 @@ namespace Mycila {
             break;
           case ProportionalMode::ON_INPUT:
             // proportional on measurement, i.e. accumulate the proportional term based on input changes
-            _pTerm += kp * dError;
+            _pTerm = _icMode == IntegralCorrectionMode::CLAMP
+                       ? _clamp(_pTerm + kp * dError, -_outputMax, _outputMax)
+                       : _pTerm + kp * dError;
             break;
           default:
             assert(false);
@@ -368,17 +370,9 @@ namespace Mycila {
         }
 
         // calculate integral term and integrate over time
-        _iTerm += ki * error;
-
-        // clamp integral if needed to prevent windup
-        if (_icMode == IntegralCorrectionMode::CLAMP) {
-          _iTerm = _clamp(_iTerm);
-
-          // clamp proportional term to max output limit in both directions
-          if (_pMode == ProportionalMode::ON_INPUT) {
-            _pTerm = _clamp(_pTerm, -_outputMax, _outputMax);
-          }
-        }
+        _iTerm = _icMode == IntegralCorrectionMode::CLAMP
+                   ? _clamp(_iTerm + ki * error)
+                   : _iTerm + ki * error;
 
         // calculate derivative term
         _dTerm = kd * dError;
