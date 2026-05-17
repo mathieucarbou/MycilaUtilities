@@ -4,30 +4,16 @@
  */
 #include <HardwareSerial.h>
 
-#include <MycilaCircularBuffer.h>
 #include <MycilaExpiringValue.h>
 #include <MycilaString.h>
 #include <MycilaTime.h>
 
 #define PID_COUNT 3
 
-Mycila::CircularBuffer<int, 5> buffer;
-
 void setup() {
   Serial.begin(115200);
   while (!Serial)
     continue;
-
-  buffer.add(1);
-  buffer.add(2);
-  buffer.add(3);
-  buffer.add(4);
-  buffer.add(5);
-  buffer.add(6);
-  buffer.add(7);
-
-  buffer.dump(Serial);
-  Serial.println(); // CircularBuffer(2,5/5)={6,7,3,4,5}
 
   Serial.println(Mycila::string::toLowerCase("Hello World").c_str()); // hello world
   Serial.println(Mycila::string::toUpperCase("Hello World").c_str()); // HELLO WORLD

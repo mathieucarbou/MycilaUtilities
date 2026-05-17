@@ -9,7 +9,7 @@
 [![Build](https://github.com/mathieucarbou/MycilaUtilities/actions/workflows/ci.yml/badge.svg)](https://github.com/mathieucarbou/MycilaUtilities/actions/workflows/ci.yml)
 [![GitHub latest commit](https://badgen.net/github/last-commit/mathieucarbou/MycilaUtilities)](https://GitHub.com/mathieucarbou/MycilaUtilities/commit/)
 
-Utility helpers for Arduino / ESP32: PID controller, timing helpers, circular buffer, etc.
+Utility helpers for Arduino / ESP32: PID controller, timing helpers, etc.
 
 | [![](https://mathieu.carbou.me/MycilaUtilities/assets/pid-graph.jpeg)](https://mathieu.carbou.me/MycilaUtilities/assets/pid-graph.jpeg) | [![](https://mathieu.carbou.me/MycilaUtilities/assets/pid-console.jpeg)](https://mathieu.carbou.me/MycilaUtilities/assets/pid-console.jpeg) |
 
@@ -25,7 +25,6 @@ Utility helpers for Arduino / ESP32: PID controller, timing helpers, circular bu
 This repository includes a few focused utility classes. See `docs/CLASSES.md` for the full short reference; the main types are:
 
 - `Mycila::PID` — flexible PID controller with modes, anti-windup, json export (optional), pause/resume and reset.
-- `Mycila::CircularBuffer<T,N>` — small fixed-size numeric circular buffer with rolling stats (avg/sum/min/max).
 - `Mycila::ExpiringValue<T>` — value container with expiration semantics and optional JSON export.
 - `Mycila::string` — string helper utilities (trim, case conversion, formatting floats).
 - `Mycila::Time` — helpers for formatting Unix timestamps, converting HH:MM, and time-range checks.
@@ -45,13 +44,6 @@ A compact and flexible PID controller. Key features:
 - [PID Simulator Web version](https://mathieu.carbou.me/MycilaUtilities/simulator/)
 
 **Full PID controller documentation** is available at [https://mathieu.carbou.me/MycilaUtilities/pid](https://mathieu.carbou.me/MycilaUtilities/pid)
-
-### Mycila::CircularBuffer<T,N> (src/MycilaCircularBuffer.h)
-
-A fixed-size circular buffer specialized for numeric types (integers and floating point).
-
-- O(1) add and rolling statistics: count, sum, avg, min, max, first/last, diff, rate
-- Useful for smoothing, moving averages, and small-window metrics
 
 ### Mycila::ExpiringValue<T> (src/MycilaExpiringValue.h)
 

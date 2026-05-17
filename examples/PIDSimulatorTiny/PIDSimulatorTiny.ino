@@ -4,7 +4,6 @@
  */
 #include <Arduino.h>
 #include <HardwareSerial.h>
-#include <MycilaCircularBuffer.h>
 #include <MycilaExpiringValue.h>
 #include <MycilaPID.h>
 #include <MycilaString.h>

@@ -9,7 +9,6 @@
 #define MYCILA_UTILITIES_VERSION_MINOR    3
 #define MYCILA_UTILITIES_VERSION_REVISION 0
 
-#include "MycilaCircularBuffer.h"
 #include "MycilaExpiringValue.h"
 #include "MycilaPID.h"
 #include "MycilaString.h"

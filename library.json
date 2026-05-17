@@ -1,7 +1,7 @@
 {
   "name": "MycilaUtilities",
   "version": "4.3.0",
-  "description": "Utility helpers for Arduino / ESP32: PID controller, timing helpers, circular buffer, etc",
+  "description": "Utility helpers for Arduino / ESP32: PID controller, timing helpers, etc",
   "homepage": "https://github.com/mathieucarbou/MycilaUtilities",
   "repository": {
     "type": "git",
@@ -17,7 +17,6 @@
     "espressif32"
   ],
   "headers": [
-    "MycilaCircularBuffer.h",
     "MycilaExpiringValue.h",
     "MycilaPID.h",
     "MycilaString.h",
