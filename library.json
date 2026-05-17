@@ -1,6 +1,6 @@
 {
   "name": "MycilaUtilities",
-  "version": "4.3.0",
+  "version": "5.0.0",
   "description": "Utility helpers for Arduino / ESP32: PID controller, timing helpers, etc",
   "homepage": "https://github.com/mathieucarbou/MycilaUtilities",
   "repository": {
